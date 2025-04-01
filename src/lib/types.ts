@@ -1,12 +1,99 @@
-import { Database } from './database.types';
 
-export type SocialConnection = Database['public']['Tables']['social_connections']['Row'];
-export type Workflow = Database['public']['Tables']['workflows']['Row'];
-export type Post = Database['public']['Tables']['posts']['Row'];
-export type SubscriptionPlan = Database['public']['Tables']['subscription_plans']['Row'];
-export type Subscription = Database['public']['Tables']['subscriptions']['Row'];
+// Define database types directly since database.types is missing
+export type SocialConnection = {
+  id: string;
+  user_id: string;
+  platform: Platform;
+  platform_user_id: string;
+  platform_username: string;
+  access_token: string;
+  refresh_token?: string;
+  metadata?: any;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Workflow = {
+  id: string;
+  user_id: string;
+  name: string;
+  source_platform: Platform;
+  target_platforms: Platform[];
+  is_active: boolean;
+  config: WorkflowConfig;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Post = {
+  id: string;
+  user_id: string;
+  title: string;
+  description?: string;
+  platform: Platform;
+  platform_post_id?: string;
+  status: 'draft' | 'published' | 'scheduled' | 'failed';
+  scheduled_for?: string;
+  published_at?: string;
+  metadata?: any;
+  created_at: string;
+  updated_at: string;
+};
+
+export type SubscriptionPlan = {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  features: SubscriptionFeatures;
+  stripe_price_id?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Subscription = {
+  id: string;
+  user_id: string;
+  plan_id: string;
+  status: 'active' | 'canceled' | 'past_due';
+  stripe_subscription_id?: string;
+  current_period_start: string;
+  current_period_end: string;
+  cancel_at_period_end: boolean;
+  created_at: string;
+  updated_at: string;
+};
 
 export type Platform = 'tiktok' | 'facebook' | 'instagram' | 'linkedin' | 'youtube' | 'twitter';
+
+export interface WorkflowConfig {
+  name: string;
+  sourcePlatform: Platform;
+  targetPlatforms: Platform[];
+  autoPublish: boolean;
+  metadata: {
+    copyTitle: boolean;
+    copyDescription: boolean;
+    copyTags: boolean;
+  };
+}
+
+export interface VideoMetadata {
+  title: string;
+  description?: string;
+  tags?: string[];
+  thumbnail?: string;
+  category?: string;
+  privacyStatus?: 'public' | 'private' | 'unlisted';
+}
+
+export interface WorkflowError {
+  platform: Platform;
+  message: string;
+  code: string;
+  timestamp: string;
+}
 
 export interface PlatformConfig {
   name: Platform;
@@ -76,6 +163,17 @@ export const PLATFORMS: PlatformConfig[] = [
     supportedFormats: ['mp4'],
     webhookSupport: true,
   },
+  {
+    name: 'twitter',
+    label: 'Twitter',
+    icon: 'twitter',
+    color: 'bg-blue-400',
+    videoSupport: true,
+    maxDuration: 140, // 2 minutes 20 seconds
+    maxFileSize: 512000000, // 512MB
+    supportedFormats: ['mp4'],
+    webhookSupport: true,
+  }
 ];
 
 export interface SubscriptionFeatures {

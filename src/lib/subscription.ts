@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import type { SubscriptionFeatures, SubscriptionLimits } from './types';
+import { PLATFORMS } from './types';
 
 export async function getSubscriptionLimits(): Promise<SubscriptionLimits> {
   const { data: { user } } = await supabase.auth.getUser();

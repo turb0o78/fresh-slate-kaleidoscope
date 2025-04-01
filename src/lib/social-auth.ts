@@ -22,12 +22,28 @@ const OAUTH_PROVIDERS = {
     clientId: import.meta.env.VITE_FACEBOOK_CLIENT_ID,
     clientSecret: import.meta.env.VITE_FACEBOOK_CLIENT_SECRET,
     scope: 'email pages_show_list pages_read_engagement pages_manage_posts publish_video',
+    redirectUri: 'https://opaldesign.fr/dashboard/connections'
   },
   instagram: {
     url: 'https://api.instagram.com/oauth/authorize',
     clientId: import.meta.env.VITE_INSTAGRAM_CLIENT_ID,
     clientSecret: import.meta.env.VITE_INSTAGRAM_CLIENT_SECRET,
     scope: 'user_profile user_media',
+    redirectUri: 'https://opaldesign.fr/dashboard/connections'
+  },
+  linkedin: {
+    url: 'https://www.linkedin.com/oauth/v2/authorization',
+    clientId: import.meta.env.VITE_LINKEDIN_CLIENT_ID,
+    clientSecret: import.meta.env.VITE_LINKEDIN_CLIENT_SECRET,
+    scope: 'r_liteprofile r_emailaddress w_member_social',
+    redirectUri: 'https://opaldesign.fr/dashboard/connections'
+  },
+  twitter: {
+    url: 'https://twitter.com/i/oauth2/authorize',
+    clientId: import.meta.env.VITE_TWITTER_CLIENT_ID,
+    clientSecret: import.meta.env.VITE_TWITTER_CLIENT_SECRET,
+    scope: 'tweet.read tweet.write users.read',
+    redirectUri: 'https://opaldesign.fr/dashboard/connections'
   }
 };
 

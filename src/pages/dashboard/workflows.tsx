@@ -3,7 +3,7 @@ import { Plus, ArrowRight, MoreVertical, Play, Pause, Settings, AlertCircle } fr
 import { Button } from '../../components/ui/button';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../lib/auth';
-import type { Workflow, Platform, WorkflowConfig, WorkflowStatus } from '../../lib/types';
+import type { Workflow, Platform, WorkflowConfig } from '../../lib/types';
 
 export function WorkflowsPage() {
   const { user } = useAuth();
@@ -156,7 +156,7 @@ export function WorkflowsPage() {
                     key={platform}
                     onClick={() => {
                       const platforms = workflowConfig.targetPlatforms.includes(platform as Platform)
-                        ? workflowConfig.targetPlatforms.filter(p => p !== platform)
+                        ? workflowConfig.targetPlatforms.filter((p: Platform) => p !== platform)
                         : [...workflowConfig.targetPlatforms, platform as Platform];
                       setWorkflowConfig({ ...workflowConfig, targetPlatforms: platforms });
                     }}
@@ -246,7 +246,7 @@ export function WorkflowsPage() {
                     <div className="flex items-center text-sm text-gray-500 mt-1">
                       <span className="capitalize">{workflow.source_platform}</span>
                       <ArrowRight className="h-4 w-4 mx-2" />
-                      <span>{workflow.target_platforms.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(', ')}</span>
+                      <span>{workflow.target_platforms.map((p: Platform) => p.charAt(0).toUpperCase() + p.slice(1)).join(', ')}</span>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
