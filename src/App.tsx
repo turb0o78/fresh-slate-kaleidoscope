@@ -1,27 +1,51 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, RequireAuth } from './lib/auth';
+import { HomePage } from './pages/home';
+import { LoginPage } from './pages/auth/login';
+import { SignUpPage } from './pages/auth/signup';
+import { DashboardPage } from './pages/dashboard';
+import { TermsPage } from './pages/legal/terms';
+import { PrivacyPage } from './pages/legal/privacy';
+import { Header } from './components/layout/header';
+import { Footer } from './components/layout/footer';
 
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
+function App() {
+  return (
+    <Router>
+      <AuthProvider>
         <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
+          {/* Public routes */}
+          <Route
+            path="/"
+            element={
+              <>
+                <Header />
+                <HomePage />
+                <Footer />
+              </>
+            }
+          />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+
+          {/* Protected routes */}
+          <Route
+            path="/dashboard/*"
+            element={
+              <RequireAuth>
+                <DashboardPage />
+              </RequireAuth>
+            }
+          />
+
+          {/* Catch-all route */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+      </AuthProvider>
+    </Router>
+  );
+}
 
 export default App;
