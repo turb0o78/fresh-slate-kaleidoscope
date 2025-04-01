@@ -1,3 +1,4 @@
+
 import { Check } from 'lucide-react';
 import { Button } from '../ui/button';
 import { formatPrice } from '../../lib/stripe';
@@ -28,7 +29,7 @@ export function PlanCard({ plan, isPopular, onSelect, isLoading, currentPlan }: 
         <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
         <p className="text-gray-600 mb-4">{plan.description}</p>
         <div className="text-4xl font-bold">{formatPrice(plan.price)}</div>
-        {plan.interval === 'month' && plan.price > 0 && (
+        {plan.price > 0 && (
           <p className="text-gray-500 text-sm">per month</p>
         )}
       </div>

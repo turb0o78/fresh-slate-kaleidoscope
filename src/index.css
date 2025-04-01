@@ -37,7 +37,7 @@
   }
 
   .feature-card {
-    @apply bg-white p-6 rounded-xl shadow-card transition-all duration-300 hover:shadow-lg;
+    @apply bg-white p-6 rounded-xl shadow-sm transition-all duration-300 hover:shadow-lg;
   }
   
   .section-padding {
@@ -53,7 +53,7 @@
   }
 
   .stats-card {
-    @apply bg-white rounded-xl shadow-card p-6;
+    @apply bg-white rounded-xl shadow-sm p-6;
   }
 }
 
