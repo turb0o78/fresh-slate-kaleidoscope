@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 
 type ToastProps = {
@@ -103,5 +102,3 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 }
 
 export const useToast = () => React.useContext(ToastContext);
-
-import React from 'react';
