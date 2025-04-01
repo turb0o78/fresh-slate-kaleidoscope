@@ -36,7 +36,7 @@ export function ConnectionsPage() {
 
   const handleCallback = async (code: string, state: string) => {
     try {
-      const { platform } = await handleOAuthCallback(code, state);
+      await handleOAuthCallback(code, state);
       await loadConnections();
       navigate('/dashboard/connections', { replace: true });
     } catch (err) {

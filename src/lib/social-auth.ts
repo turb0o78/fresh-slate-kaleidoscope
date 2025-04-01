@@ -2,14 +2,9 @@
 import { supabase } from './supabase';
 import type { Platform } from './types';
 
-type OAuthProvider = {
-  url: string;
-  redirectUri: string;
-  scope: string;
-} & (
-  | { clientId: string; clientSecret: string; }
-  | { clientKey: string; clientSecret: string; }
-);
+type OAuthProvider = 
+  | { url: string; redirectUri: string; scope: string; clientId: string; clientSecret: string; }
+  | { url: string; redirectUri: string; scope: string; clientKey: string; clientSecret: string; };
 
 const OAUTH_PROVIDERS: Record<Platform, OAuthProvider> = {
   youtube: {
@@ -76,6 +71,7 @@ export async function initiateSocialAuth(platform: Platform) {
   const params = new URLSearchParams();
   
   if (platform === 'tiktok') {
+    // Check if provider has clientKey property
     if ('clientKey' in provider) {
       params.append('client_key', provider.clientKey);
       params.append('response_type', 'code');
@@ -84,6 +80,7 @@ export async function initiateSocialAuth(platform: Platform) {
       params.append('state', state);
     }
   } else {
+    // Check if provider has clientId property
     if ('clientId' in provider) {
       params.append('client_id', provider.clientId);
       params.append('response_type', 'code');
@@ -117,6 +114,11 @@ export async function handleOAuthCallback(code: string, state: string) {
   try {
     if (platform === 'tiktok') {
       const provider = OAUTH_PROVIDERS.tiktok;
+
+      // Make sure we use type guard to access clientKey
+      if (!('clientKey' in provider)) {
+        throw new Error('Invalid TikTok provider configuration');
+      }
 
       // Exchange code for access token using TikTok v2 API
       console.log('Exchanging code for access token...');
