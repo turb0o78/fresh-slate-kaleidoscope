@@ -1,3 +1,4 @@
+
 import { supabase } from './supabase';
 import type { Platform } from './types';
 
@@ -117,13 +118,17 @@ export async function handleOAuthCallback(code: string, state: string) {
         throw new Error('No access token received from TikTok');
       }
 
-      // Get user info using TikTok v2 API
+      // Get user info using TikTok v2 API - Adding the required fields parameter
       console.log('Fetching user info...');
       const userResponse = await fetch('https://open.tiktokapis.com/v2/user/info/', {
+        method: 'POST', // Changed to POST method
         headers: {
           'Authorization': `Bearer ${tokenData.access_token}`,
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          fields: ['open_id', 'union_id', 'avatar_url', 'avatar_url_100', 'avatar_url_200', 'display_name', 'bio_description']
+        }),
       });
 
       const userData = await userResponse.json();

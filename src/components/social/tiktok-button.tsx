@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '../ui/button';
 import { GitBranch as BrandTiktok, Plus, Trash2 } from 'lucide-react';
@@ -24,7 +25,7 @@ export function TikTokButton({ connection, onConnect, onDisconnect, isLoading }:
             <h3 className="font-medium">TikTok</h3>
             {connection && (
               <p className="text-sm text-gray-500">
-                Connected as {connection.platform_user_id}
+                Connected as {connection.platform_username || connection.platform_user_id}
               </p>
             )}
           </div>
