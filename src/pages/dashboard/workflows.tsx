@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, ArrowRight, MoreVertical, Play, Pause, Settings, AlertCircle } from 'lucide-react';
+import { Plus, ArrowRight, Play, Pause, Settings, AlertCircle } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../lib/auth';

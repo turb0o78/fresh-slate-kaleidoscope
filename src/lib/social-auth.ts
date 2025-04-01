@@ -2,7 +2,16 @@
 import { supabase } from './supabase';
 import type { Platform } from './types';
 
-const OAUTH_PROVIDERS = {
+type OAuthProvider = {
+  url: string;
+  redirectUri: string;
+  scope: string;
+} & (
+  | { clientId: string; clientSecret: string; }
+  | { clientKey: string; clientSecret: string; }
+);
+
+const OAUTH_PROVIDERS: Record<Platform, OAuthProvider> = {
   youtube: {
     url: 'https://accounts.google.com/o/oauth2/v2/auth',
     clientId: import.meta.env.VITE_YOUTUBE_CLIENT_ID,
@@ -67,17 +76,21 @@ export async function initiateSocialAuth(platform: Platform) {
   const params = new URLSearchParams();
   
   if (platform === 'tiktok') {
-    params.append('client_key', provider.clientKey);
-    params.append('response_type', 'code');
-    params.append('scope', provider.scope);
-    params.append('redirect_uri', provider.redirectUri);
-    params.append('state', state);
+    if ('clientKey' in provider) {
+      params.append('client_key', provider.clientKey);
+      params.append('response_type', 'code');
+      params.append('scope', provider.scope);
+      params.append('redirect_uri', provider.redirectUri);
+      params.append('state', state);
+    }
   } else {
-    params.append('client_id', provider.clientId);
-    params.append('response_type', 'code');
-    params.append('scope', provider.scope);
-    params.append('redirect_uri', provider.redirectUri || `${window.location.origin}/dashboard/connections`);
-    params.append('state', state);
+    if ('clientId' in provider) {
+      params.append('client_id', provider.clientId);
+      params.append('response_type', 'code');
+      params.append('scope', provider.scope);
+      params.append('redirect_uri', provider.redirectUri || `${window.location.origin}/dashboard/connections`);
+      params.append('state', state);
+    }
   }
 
   window.location.href = `${provider.url}?${params.toString()}`;

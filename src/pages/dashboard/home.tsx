@@ -34,7 +34,7 @@ export function DashboardHome() {
         totalPosts: postsResponse.count || 0,
         connectedPlatforms: connectionsResponse.count || 0,
         scheduledPosts: Math.floor(Math.random() * 5), // Placeholder for demo
-        engagementRate: (Math.random() * 10).toFixed(1), // Placeholder for demo
+        engagementRate: parseFloat((Math.random() * 10).toFixed(1)), // Convert string to number
       });
     } catch (error) {
       console.error('Error loading stats:', error);

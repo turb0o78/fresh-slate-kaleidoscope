@@ -1,7 +1,7 @@
 
 import { Routes, Route } from 'react-router-dom';
 import { DashboardLayout } from './layout';
-import { DashboardHomePage } from './home';
+import { DashboardHome } from './home';
 import { ConnectionsPage } from './connections';
 import { WorkflowsPage } from './workflows';
 import { AnalyticsPage } from './analytics';
@@ -14,7 +14,7 @@ export function DashboardPage() {
   return (
     <DashboardLayout>
       <Routes>
-        <Route index element={<DashboardHomePage />} />
+        <Route index element={<DashboardHome />} />
         <Route path="connections" element={<ConnectionsPage />} />
         <Route path="workflows" element={<WorkflowsPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />

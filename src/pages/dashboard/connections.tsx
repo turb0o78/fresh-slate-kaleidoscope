@@ -38,7 +38,6 @@ export function ConnectionsPage() {
     try {
       const { platform } = await handleOAuthCallback(code, state);
       await loadConnections();
-      // Clear URL parameters
       navigate('/dashboard/connections', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to connect account');
