@@ -10,6 +10,7 @@ import { PrivacyPage } from './pages/legal/privacy';
 import { Header } from './components/layout/header';
 import { Footer } from './components/layout/footer';
 import { useEffect } from 'react';
+import { ToastProvider } from './components/ui/toast';
 
 function App() {
   // Add scroll to top on route change
@@ -20,60 +21,62 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <Routes>
-          {/* Public routes */}
-          <Route
-            path="/"
-            element={
-              <>
-                <Header />
-                <div className="pt-16"> {/* Add padding to account for fixed header */}
-                  <HomePage />
-                </div>
-                <Footer />
-              </>
-            }
-          />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignUpPage />} />
-          <Route 
-            path="/terms" 
-            element={
-              <>
-                <Header />
-                <div className="pt-16"> 
-                  <TermsPage />
-                </div>
-                <Footer />
-              </>
-            } 
-          />
-          <Route 
-            path="/privacy" 
-            element={
-              <>
-                <Header />
-                <div className="pt-16"> 
-                  <PrivacyPage />
-                </div>
-                <Footer />
-              </>
-            } 
-          />
+        <ToastProvider>
+          <Routes>
+            {/* Public routes */}
+            <Route
+              path="/"
+              element={
+                <>
+                  <Header />
+                  <div className="pt-16"> {/* Add padding to account for fixed header */}
+                    <HomePage />
+                  </div>
+                  <Footer />
+                </>
+              }
+            />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignUpPage />} />
+            <Route 
+              path="/terms" 
+              element={
+                <>
+                  <Header />
+                  <div className="pt-16"> 
+                    <TermsPage />
+                  </div>
+                  <Footer />
+                </>
+              } 
+            />
+            <Route 
+              path="/privacy" 
+              element={
+                <>
+                  <Header />
+                  <div className="pt-16"> 
+                    <PrivacyPage />
+                  </div>
+                  <Footer />
+                </>
+              } 
+            />
 
-          {/* Protected routes */}
-          <Route
-            path="/dashboard/*"
-            element={
-              <RequireAuth>
-                <DashboardPage />
-              </RequireAuth>
-            }
-          />
+            {/* Protected routes */}
+            <Route
+              path="/dashboard/*"
+              element={
+                <RequireAuth>
+                  <DashboardPage />
+                </RequireAuth>
+              }
+            />
 
-          {/* Catch-all route */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+            {/* Catch-all route */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </ToastProvider>
       </AuthProvider>
     </Router>
   );
