@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Button } from '../ui/button';
-import { BrandTiktok, Plus, Trash2 } from 'lucide-react';
+import { Music, Plus, Trash2 } from 'lucide-react';
 import type { SocialConnection } from '../../lib/types';
 
 interface TikTokButtonProps {
@@ -18,8 +18,8 @@ export function TikTokButton({ connection, onConnect, onDisconnect, isLoading }:
     <div className="bg-white p-6 rounded-lg shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-3">
-          <div className="text-black">
-            <BrandTiktok className="h-6 w-6" />
+          <div className="text-black bg-pink-50 p-1.5 rounded-md">
+            <Music className="h-5 w-5" />
           </div>
           <div>
             <h3 className="font-medium">TikTok</h3>
