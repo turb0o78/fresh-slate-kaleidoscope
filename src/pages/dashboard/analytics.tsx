@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { BarChart2, TrendingUp, Users, Eye } from 'lucide-react';
+import { Eye } from 'lucide-react';
 
 export function AnalyticsPage() {
   return (

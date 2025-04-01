@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { CreditCard, Shield, Check } from 'lucide-react';
+import { Shield } from 'lucide-react';
 import { PlanCard } from '../../components/subscription/plan-card';
-import { Button } from '../../components/ui/button';
 import { supabase } from '../../lib/supabase';
-import { createCheckoutSession, getCurrentPlan, formatPrice } from '../../lib/stripe';
+import { createCheckoutSession, getCurrentPlan } from '../../lib/stripe';
 import type { SubscriptionPlan } from '../../lib/types';
 
 export function BillingPage() {

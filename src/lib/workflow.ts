@@ -24,8 +24,7 @@ export async function validateVideo(file: File, platform: Platform) {
   };
 }
 
-export async function processVideo(file: File, sourcePlatform: Platform, targetPlatform: Platform) {
-  // Implement video processing logic here
+export async function processVideo(file: File) {
   // This would typically involve:
   // 1. Transcoding to the right format
   // 2. Adjusting resolution/bitrate
@@ -37,10 +36,10 @@ export async function processVideo(file: File, sourcePlatform: Platform, targetP
 }
 
 export async function publishVideo(
-  file: File,
+  _file: File,
   platform: Platform,
-  metadata: VideoMetadata,
-  accessToken: string
+  _metadata: VideoMetadata,
+  _accessToken: string
 ): Promise<{ success: boolean; postId?: string; error?: WorkflowError }> {
   try {
     // Implement actual video upload and publishing logic here

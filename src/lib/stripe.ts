@@ -1,6 +1,5 @@
 import { loadStripe } from '@stripe/stripe-js';
 import { supabase } from './supabase';
-import type { SubscriptionPlan } from './types';
 
 // Initialize Stripe as a promise
 let stripePromise: Promise<any> | null = null;
