@@ -134,10 +134,10 @@ export async function handleOAuthCallback(code: string, state: string) {
         throw new Error('No access token received from TikTok');
       }
 
-      // Get user info using TikTok v2 API - Adding the required fields parameter
+      // Get user info using TikTok v2 API - Correcting the request format
       console.log('Fetching user info...');
       const userResponse = await fetch('https://open.tiktokapis.com/v2/user/info/', {
-        method: 'POST', // Changed to POST method
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${tokenData.access_token}`,
           'Content-Type': 'application/json',

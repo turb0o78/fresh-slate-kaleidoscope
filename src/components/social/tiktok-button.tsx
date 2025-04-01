@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Button } from '../ui/button';
-import { GitBranch as BrandTiktok, Plus, Trash2 } from 'lucide-react';
+import { BrandTiktok, Plus, Trash2 } from 'lucide-react';
 import type { SocialConnection } from '../../lib/types';
 
 interface TikTokButtonProps {
