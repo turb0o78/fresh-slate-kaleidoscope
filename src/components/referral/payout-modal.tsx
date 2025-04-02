@@ -97,7 +97,7 @@ export function PayoutModal({ open, onOpenChange, rewardAmount, onSuccess }: Pay
               type="email" 
               placeholder="your-email@example.com"
               value={paypalEmail}
-              onChange={(e) => setPaypalEmail(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPaypalEmail(e.target.value)}
               required
             />
           </div>
