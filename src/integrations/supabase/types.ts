@@ -9,6 +9,50 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      downloaded_videos: {
+        Row: {
+          created_at: string | null
+          deleted_at: string | null
+          expires_at: string
+          id: string
+          processing_status: string | null
+          storage_path: string
+          tiktok_video_id: string
+          user_id: string
+          workflow_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          deleted_at?: string | null
+          expires_at: string
+          id?: string
+          processing_status?: string | null
+          storage_path: string
+          tiktok_video_id: string
+          user_id: string
+          workflow_id: string
+        }
+        Update: {
+          created_at?: string | null
+          deleted_at?: string | null
+          expires_at?: string
+          id?: string
+          processing_status?: string | null
+          storage_path?: string
+          tiktok_video_id?: string
+          user_id?: string
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "downloaded_videos_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           created_at: string | null

@@ -18,6 +18,39 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
+// Fonction pour télécharger une vidéo TikTok sans watermark
+async function downloadTikTokVideo(videoId: string): Promise<ArrayBuffer> {
+  try {
+    console.log(`Téléchargement de la vidéo TikTok ${videoId} sans watermark`);
+    
+    // Construire l'URL TikTok complète si seulement l'ID est fourni
+    const tiktokUrl = videoId.includes('tiktok.com') 
+      ? videoId 
+      : `https://www.tiktok.com/@username/video/${videoId}`;
+    
+    // Utiliser une API tierce pour télécharger sans watermark
+    // Note: Ceci est un exemple, remplacer par une API réelle
+    const apiUrl = `https://api.example.com/tiktok/download?url=${encodeURIComponent(tiktokUrl)}&no_watermark=1`;
+    
+    console.log(`Appel de l'API de téléchargement: ${apiUrl}`);
+    const response = await fetch(apiUrl);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Échec du téléchargement: ${response.status} - ${errorText}`);
+    }
+    
+    // Récupérer la vidéo en tant qu'ArrayBuffer
+    const videoBuffer = await response.arrayBuffer();
+    console.log(`Vidéo téléchargée avec succès, taille: ${videoBuffer.byteLength} octets`);
+    
+    return videoBuffer;
+  } catch (error) {
+    console.error("Erreur lors du téléchargement de la vidéo TikTok:", error);
+    throw error;
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -25,142 +58,76 @@ serve(async (req) => {
   }
 
   try {
-    const { videoId, workflowId, userId } = await req.json();
-    
-    if (!videoId || !workflowId) {
-      return new Response(
-        JSON.stringify({ error: 'VideoId and workflowId are required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Vérifier l'authentification (JWT token)
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new Error('Authentification requise');
     }
-    
-    // Vérifier si l'utilisateur a droit au téléchargement sans watermark
-    const { data: userPlan, error: userPlanError } = await supabase
-      .from('user_plans')
-      .select('plan_id')
-      .eq('user_id', userId)
-      .eq('active', true)
-      .single();
-      
-    if (userPlanError || !userPlan) {
-      return new Response(
-        JSON.stringify({ error: 'User does not have an active subscription' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+
+    // Récupérer les données de la requête
+    const { videoId, userId, workflowId, expiresAt } = await req.json();
+
+    if (!videoId || !userId || !workflowId || !expiresAt) {
+      throw new Error('Paramètres manquants: videoId, userId, workflowId et expiresAt sont requis');
     }
+
+    console.log(`Demande de téléchargement pour la vidéo ${videoId}, utilisateur ${userId}, workflow ${workflowId}`);
     
-    // Vérifier si le workflow appartient à l'utilisateur et a l'option sans watermark activée
-    const { data: workflow, error: workflowError } = await supabase
-      .from('workflows')
-      .select('config')
-      .eq('id', workflowId)
-      .eq('user_id', userId)
-      .single();
-      
-    if (workflowError || !workflow) {
-      return new Response(
-        JSON.stringify({ error: 'Workflow not found or not owned by user' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // Télécharger la vidéo sans watermark
+    const videoBuffer = await downloadTikTokVideo(videoId);
     
-    const config = workflow.config;
-    if (!config.removeWatermark) {
-      return new Response(
-        JSON.stringify({ error: 'Workflow is not configured for watermark removal' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // Chemin de stockage dans le bucket (user_id/workflow_id/video_id.mp4)
+    const storagePath = `${userId}/${workflowId}/${videoId}.mp4`;
     
-    // Téléchargement de la vidéo sans watermark
-    const videoUrl = `https://www.tikwm.com/video/media/hdplay/${videoId}.mp4`;
+    // Sauvegarder la vidéo dans le stockage Supabase
+    console.log(`Sauvegarde de la vidéo dans le stockage: ${storagePath}`);
     
-    console.log(`Downloading video without watermark: ${videoUrl}`);
-    
-    const response = await fetch(videoUrl);
-    
-    if (!response.ok) {
-      throw new Error(`Failed to download TikTok video: ${response.status}`);
-    }
-    
-    // Récupération des données vidéo
-    const videoBlob = await response.blob();
-    
-    // Créer un nom de fichier unique
-    const filename = `tiktok_${videoId}_${Date.now()}.mp4`;
-    
-    // Vérifier si le bucket "videos" existe, sinon le créer
-    const { data: bucket } = await supabase
-      .storage
-      .getBucket('videos');
-      
-    if (!bucket) {
-      await supabase.storage.createBucket('videos', {
-        public: false,
-        allowedMimeTypes: ['video/mp4'],
-        fileSizeLimit: 104857600 // 100MB
-      });
-    }
-    
-    // Convertir le blob en ArrayBuffer pour le téléchargement vers Supabase Storage
-    const arrayBuffer = await videoBlob.arrayBuffer();
-    const buffer = new Uint8Array(arrayBuffer);
-    
-    // Uploader la vidéo dans Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase
       .storage
       .from('videos')
-      .upload(`${userId}/${filename}`, buffer, {
+      .upload(storagePath, videoBuffer, {
         contentType: 'video/mp4',
-        cacheControl: '3600',
-        upsert: false
+        upsert: true
       });
-      
+    
     if (uploadError) {
-      throw new Error(`Failed to upload video: ${uploadError.message}`);
+      throw new Error(`Erreur lors du téléchargement vers le stockage: ${uploadError.message}`);
     }
     
-    // Créer un enregistrement pour la vidéo téléchargée
-    const { data: videoRecord, error: videoRecordError } = await supabase
+    // Enregistrer les informations de la vidéo téléchargée dans la base de données
+    const { data: insertData, error: insertError } = await supabase
       .from('downloaded_videos')
       .insert({
         user_id: userId,
         workflow_id: workflowId,
         tiktok_video_id: videoId,
-        storage_path: `${userId}/${filename}`,
-        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Expire après 24h
+        storage_path: storagePath,
+        expires_at: expiresAt,
+        processing_status: 'completed'
       })
-      .select('id')
+      .select()
       .single();
-      
-    if (videoRecordError) {
-      throw new Error(`Failed to record video download: ${videoRecordError.message}`);
+    
+    if (insertError) {
+      throw new Error(`Erreur lors de l'insertion des données: ${insertError.message}`);
     }
     
-    // Créer une URL signée pour accéder temporairement à la vidéo
-    const { data: signedUrl, error: signedUrlError } = await supabase
-      .storage
-      .from('videos')
-      .createSignedUrl(`${userId}/${filename}`, 3600); // Lien valide 1 heure
-      
-    if (signedUrlError) {
-      throw new Error(`Failed to create signed URL: ${signedUrlError.message}`);
-    }
-    
+    // Renvoyer les détails du téléchargement
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        video_id: videoRecord.id,
-        url: signedUrl.signedUrl,
-        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+      JSON.stringify({
+        success: true,
+        message: 'Vidéo téléchargée avec succès',
+        video_id: insertData.id,
+        storage_path: storagePath,
+        expires_at: expiresAt
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error downloading TikTok video:', error);
+    console.error('Erreur lors du téléchargement de la vidéo:', error);
     
     return new Response(
-      JSON.stringify({ error: error.message || 'Failed to download TikTok video' }),
+      JSON.stringify({ error: error.message || 'Une erreur est survenue lors du téléchargement' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
