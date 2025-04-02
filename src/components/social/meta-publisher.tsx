@@ -17,7 +17,7 @@ interface SocialConnection {
 interface Connections {
   facebook: SocialConnection | null;
   instagram: SocialConnection | null;
-  [key: string]: SocialConnection | null; // Ajout d'un index signature pour résoudre l'erreur TS7053
+  [key: string]: SocialConnection | null; // Index signature pour permettre l'accès dynamique
 }
 
 export function MetaPublisher({ userId }: { userId: string }) {
