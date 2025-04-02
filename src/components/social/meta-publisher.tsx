@@ -3,8 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../ui/toast';
-import { UploadIcon, Share2, ImageIcon, VideoIcon, X } from 'lucide-react';
-import { PlusCircle } from 'lucide-react';
+import { UploadIcon, Share2, VideoIcon, X } from 'lucide-react';
 import { FaFacebook, FaInstagram } from 'react-icons/fa';
 
 interface SocialConnection {
@@ -202,6 +201,7 @@ export function MetaPublisher({ userId }: { userId: string }) {
       toast({
         title: "Erreur",
         description: "Une erreur est survenue lors de la publication: " + (error as Error).message,
+        type: "error"
       });
     } finally {
       setLoading(false);
@@ -294,9 +294,9 @@ export function MetaPublisher({ userId }: { userId: string }) {
               )}
               <Button
                 type="button"
-                variant="destructive"
+                variant="outline"
                 size="icon"
-                className="absolute top-2 right-2 h-8 w-8 rounded-full"
+                className="absolute top-2 right-2 h-8 w-8 rounded-full bg-white text-red-500 hover:bg-red-50"
                 onClick={clearFile}
               >
                 <X className="h-4 w-4" />

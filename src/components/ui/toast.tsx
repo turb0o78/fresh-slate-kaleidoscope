@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 
-type ToastProps = {
+export type ToastProps = {
   title: string;
   description?: string;
   type?: 'default' | 'success' | 'error' | 'warning';

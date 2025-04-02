@@ -85,7 +85,7 @@ export function SocialWorkflowCreator() {
       toast({
         title: "Erreur",
         description: "Impossible de charger vos connexions",
-        variant: "destructive"
+        type: "error"
       });
     } finally {
       setIsLoading(false);
@@ -99,7 +99,7 @@ export function SocialWorkflowCreator() {
       toast({
         title: "Connexion requise",
         description: `Veuillez d'abord connecter votre compte ${platforms[platformId]?.name}`,
-        variant: "destructive"
+        type: "error"
       });
     }
   };
@@ -112,7 +112,7 @@ export function SocialWorkflowCreator() {
       toast({
         title: "Connexion requise",
         description: `Veuillez d'abord connecter votre compte ${platforms[platformId]?.name}`,
-        variant: "destructive"
+        type: "error"
       });
     }
   };
@@ -124,18 +124,20 @@ export function SocialWorkflowCreator() {
     
     try {
       // Vérifier si un workflow identique existe déjà
-      const { data: existingWorkflows } = await supabase
+      const { data: existingWorkflows, error: checkError } = await supabase
         .from('workflows')
         .select('*')
         .eq('user_id', user.id)
         .eq('source_platform', sourcePlatform)
         .eq('target_platforms', [targetPlatform]);
       
+      if (checkError) throw checkError;
+      
       if (existingWorkflows && existingWorkflows.length > 0) {
         toast({
           title: "Workflow existant",
           description: "Un workflow similaire existe déjà",
-          variant: "destructive"
+          type: "error"
         });
         setShowConfirmation(false);
         setIsCreating(false);
@@ -143,7 +145,7 @@ export function SocialWorkflowCreator() {
       }
 
       // Créer le nouveau workflow
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('workflows')
         .insert([
           {
@@ -165,7 +167,6 @@ export function SocialWorkflowCreator() {
       toast({
         title: "Workflow créé",
         description: "Votre workflow a été créé avec succès",
-        variant: "default"
       });
 
       // Réinitialiser l'état
@@ -177,7 +178,7 @@ export function SocialWorkflowCreator() {
       toast({
         title: "Erreur",
         description: "Impossible de créer le workflow",
-        variant: "destructive"
+        type: "error"
       });
     } finally {
       setIsCreating(false);

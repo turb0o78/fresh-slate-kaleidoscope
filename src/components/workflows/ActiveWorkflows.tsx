@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../lib/auth';
 import { useToast } from '../ui/toast';
 import { Toggle } from '../ui/toggle';
-import { Edit, Loader2, MoreVertical, Settings, Trash } from 'lucide-react';
+import { Loader2, Trash } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '../ui/dialog';
 import { AlertCircle } from 'lucide-react';
@@ -29,13 +29,6 @@ const platformIcons: Record<string, React.ReactNode> = {
   instagram: <span className="text-pink-600">📸</span>,
   facebook: <span className="text-blue-600">👍</span>,
   youtube: <span className="text-red-600">🎬</span>,
-};
-
-const platformNames: Record<string, string> = {
-  tiktok: 'TikTok',
-  instagram: 'Instagram',
-  facebook: 'Facebook',
-  youtube: 'YouTube',
 };
 
 export function ActiveWorkflows() {
@@ -68,7 +61,7 @@ export function ActiveWorkflows() {
       toast({
         title: "Erreur",
         description: "Impossible de charger vos workflows",
-        variant: "destructive"
+        type: "error"
       });
     } finally {
       setIsLoading(false);
@@ -99,7 +92,7 @@ export function ActiveWorkflows() {
       toast({
         title: "Erreur",
         description: "Impossible de mettre à jour le statut",
-        variant: "destructive"
+        type: "error"
       });
     }
   };
@@ -129,7 +122,7 @@ export function ActiveWorkflows() {
       toast({
         title: "Erreur",
         description: "Impossible de supprimer le workflow",
-        variant: "destructive"
+        type: "error"
       });
     } finally {
       setIsDeleting(false);
@@ -241,7 +234,8 @@ export function ActiveWorkflows() {
               Annuler
             </Button>
             <Button 
-              variant="destructive"
+              variant="outline"
+              className="bg-red-600 text-white hover:bg-red-700" 
               onClick={deleteWorkflow} 
               disabled={isDeleting}
             >

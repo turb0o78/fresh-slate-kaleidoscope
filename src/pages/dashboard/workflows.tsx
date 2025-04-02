@@ -1,5 +1,4 @@
 
-import React from 'react';
 import { SocialWorkflowCreator } from '../../components/workflows/SocialWorkflowCreator';
 import { ActiveWorkflows } from '../../components/workflows/ActiveWorkflows';
 
