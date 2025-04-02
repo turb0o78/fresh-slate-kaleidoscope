@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
@@ -8,6 +9,10 @@ import { YouTubeButton } from '../../components/social/youtube-button';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../lib/auth';
 import { initiateSocialAuth, handleOAuthCallback } from '../../lib/social-auth';
+import { handleMetaOAuthCallback } from '../../lib/meta-auth';
+import { FacebookConnection } from '../../components/social/facebook-connection';
+import { InstagramConnection } from '../../components/social/instagram-connection';
+import { MetaPublisher } from '../../components/social/meta-publisher';
 import type { SocialConnection, Platform } from '../../lib/types';
 
 export function ConnectionsPage() {
@@ -22,9 +27,10 @@ export function ConnectionsPage() {
   useEffect(() => {
     const code = searchParams.get('code');
     const state = searchParams.get('state');
+    const platform = sessionStorage.getItem('oauth_platform');
 
     if (code && state) {
-      handleCallback(code, state);
+      handleCallback(code, state, platform as Platform);
     }
   }, [searchParams]);
 
@@ -34,9 +40,13 @@ export function ConnectionsPage() {
     }
   }, [user]);
 
-  const handleCallback = async (code: string, state: string) => {
+  const handleCallback = async (code: string, state: string, platform: Platform) => {
     try {
-      await handleOAuthCallback(code, state);
+      if (platform === 'facebook' || platform === 'instagram') {
+        await handleMetaOAuthCallback(code, state, platform);
+      } else {
+        await handleOAuthCallback(code, state);
+      }
       await loadConnections();
       navigate('/dashboard/connections', { replace: true });
     } catch (err) {
@@ -119,6 +129,13 @@ export function ConnectionsPage() {
           <p className="text-red-600">{error}</p>
         </div>
       )}
+      
+      {/* Publisher Component - Pour tester la publication */}
+      {user && connections.length > 0 && (
+        <div className="mb-6">
+          <MetaPublisher userId={user.id} />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <YouTubeButton
@@ -134,20 +151,19 @@ export function ConnectionsPage() {
           onDisconnect={handleDisconnect}
           isLoading={connectingPlatform === 'tiktok'}
         />
-
-        <FacebookButton
-          connection={connections.find(c => c.platform === 'facebook')}
-          onConnect={() => handleConnect('facebook')}
-          onDisconnect={handleDisconnect}
-          isLoading={connectingPlatform === 'facebook'}
-        />
-
-        <InstagramButton
-          connection={connections.find(c => c.platform === 'instagram')}
-          onConnect={() => handleConnect('instagram')}
-          onDisconnect={handleDisconnect}
-          isLoading={connectingPlatform === 'instagram'}
-        />
+        
+        {/* Remplacer les anciens boutons par nos nouveaux components */}
+        {user && (
+          <FacebookConnection 
+            userId={user.id} 
+          />
+        )}
+        
+        {user && (
+          <InstagramConnection 
+            userId={user.id}
+          />
+        )}
       </div>
     </div>
   );

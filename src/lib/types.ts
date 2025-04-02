@@ -194,3 +194,13 @@ export interface SubscriptionLimits {
   analyticsLevel: 'basic' | 'advanced' | 'premium';
   supportLevel: 'basic' | 'priority' | 'premium';
 }
+
+export interface SocialMediaPost {
+  id: string;
+  platform: Platform;
+  content: string;
+  media_url?: string;
+  status: 'pending' | 'published' | 'failed';
+  platform_post_id?: string;
+  created_at: string;
+}
