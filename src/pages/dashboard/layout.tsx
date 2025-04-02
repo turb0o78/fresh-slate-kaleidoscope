@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Link2, Activity, Settings, CreditCard, Users, ArrowLeft, ArrowRight, Download } from 'lucide-react';
+import { Home, Link2, Activity, Settings, CreditCard, Users, ArrowLeft, ArrowRight } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { useAuth } from '../../lib/auth';
 import { useState, useEffect } from 'react';
@@ -100,9 +100,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               </NavItem>
               <NavItem to="/dashboard/analytics" icon={Activity} isActive={isActive('/dashboard/analytics')}>
                 {isSidebarOpen && "Analytics"}
-              </NavItem>
-              <NavItem to="/dashboard/downloader" icon={Download} isActive={isActive('/dashboard/downloader')}>
-                {isSidebarOpen && "Download & Repurpose"}
               </NavItem>
               <NavItem to="/dashboard/billing" icon={CreditCard} isActive={isActive('/dashboard/billing')}>
                 {isSidebarOpen && "Billing"}

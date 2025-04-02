@@ -1,8 +1,12 @@
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useCallback } from 'react';
 import { Share2, Copy, CheckCircle, Users, Gift, AlertCircle } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../lib/auth';
+import { useToast } from '../../components/ui/toast';
+import { ReferralHistory } from '../../components/referral/referral-history';
+import { PayoutModal } from '../../components/referral/payout-modal';
 
 interface ReferralStats {
   totalInvites: number;
@@ -18,6 +22,7 @@ interface ReferralCode {
 
 export function ReferralsPage() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [referralCode, setReferralCode] = useState<ReferralCode | null>(null);
   const [stats, setStats] = useState<ReferralStats>({
     totalInvites: 0,
@@ -28,14 +33,9 @@ export function ReferralsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [isPayoutModalOpen, setIsPayoutModalOpen] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      loadReferralData();
-    }
-  }, [user]);
-
-  const loadReferralData = async () => {
+  const loadReferralData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -43,7 +43,7 @@ export function ReferralsPage() {
       // Load referral code with explicit column selection
       const { data: codeData, error: codeError } = await supabase
         .from('referral_codes')
-        .select('code:code, created_at')
+        .select('code, created_at')
         .eq('user_id', user!.id)
         .maybeSingle();
 
@@ -59,7 +59,7 @@ export function ReferralsPage() {
         const { data: insertedCode, error: insertError } = await supabase
           .from('referral_codes')
           .insert({ user_id: user!.id, code: newCode })
-          .select('code:code, created_at')
+          .select('code, created_at')
           .single();
 
         if (insertError) throw insertError;
@@ -80,7 +80,7 @@ export function ReferralsPage() {
         totalInvites: referrals?.length || 0,
         successfulReferrals: referrals?.filter(r => r.status === 'completed').length || 0,
         pendingReferrals: referrals?.filter(r => r.status === 'pending').length || 0,
-        rewardsEarned: (referrals?.filter(r => r.reward_claimed).length || 0) * 10, // $10 per referral
+        rewardsEarned: (referrals?.filter(r => r.reward_claimed).length || 0) * 4, // 4€ per referral
       });
     } catch (err) {
       console.error('Error loading referral data:', err);
@@ -88,7 +88,13 @@ export function ReferralsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      loadReferralData();
+    }
+  }, [user, loadReferralData]);
 
   const handleCopyCode = async () => {
     if (!referralCode) return;
@@ -97,8 +103,29 @@ export function ReferralsPage() {
       await navigator.clipboard.writeText(referralCode.code);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+      
+      toast({
+        title: "Referral code copied!",
+        description: "You can now share it with friends.",
+      });
     } catch (err) {
       setError('Failed to copy referral code');
+    }
+  };
+
+  const handleCopyLink = async () => {
+    if (!referralCode) return;
+    
+    try {
+      const referralUrl = `${window.location.origin}/signup?ref=${referralCode.code}`;
+      await navigator.clipboard.writeText(referralUrl);
+      
+      toast({
+        title: "Referral link copied!",
+        description: "You can now share it with friends.",
+      });
+    } catch (err) {
+      setError('Failed to copy referral link');
     }
   };
 
@@ -106,7 +133,7 @@ export function ReferralsPage() {
     if (!referralCode) return;
 
     const referralUrl = `${window.location.origin}/signup?ref=${referralCode.code}`;
-    const message = `Join me on Purposify! Use my referral code ${referralCode.code} to get $10 credit when you sign up.`;
+    const message = `Join me on Purposify! Use my referral code ${referralCode.code} to get 20% off an annual subscription.`;
 
     switch (platform) {
       case 'twitter':
@@ -122,6 +149,12 @@ export function ReferralsPage() {
         window.location.href = `mailto:?subject=Join me on Purposify&body=${encodeURIComponent(message + '\n\n' + referralUrl)}`;
         break;
     }
+  };
+
+  const handlePayoutSuccess = () => {
+    // Reset the rewards earned amount and reload data
+    setStats(prev => ({ ...prev, rewardsEarned: 0 }));
+    loadReferralData();
   };
 
   if (loading) {
@@ -196,7 +229,7 @@ export function ReferralsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Rewards Earned</p>
-              <p className="text-2xl font-bold">${stats.rewardsEarned}</p>
+              <p className="text-2xl font-bold">€{stats.rewardsEarned}</p>
             </div>
             <div className="bg-purple-100 p-3 rounded-lg">
               <Gift className="h-6 w-6 text-purple-600" />
@@ -206,88 +239,158 @@ export function ReferralsPage() {
       </div>
 
       {/* Referral Code Section */}
-      <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-        <h2 className="text-lg font-semibold mb-4">Your Referral Code</h2>
-        <div className="flex items-center space-x-4 mb-6">
-          <div className="flex-1">
-            <div className="flex items-center justify-between bg-gray-50 px-4 py-3 rounded-lg">
-              <code className="text-lg font-mono">{referralCode?.code}</code>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleCopyCode}
-                className={copied ? 'text-green-600' : ''}
-              >
-                {copied ? (
-                  <CheckCircle className="h-4 w-4" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </Button>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <div className="lg:col-span-2">
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+            <h2 className="text-lg font-semibold mb-4">Your Referral Information</h2>
+            
+            {/* Referral Code */}
+            <div className="mb-6">
+              <p className="text-sm font-medium text-gray-600 mb-2">Your Referral Code</p>
+              <div className="flex items-center space-x-4">
+                <div className="flex-1">
+                  <div className="flex items-center justify-between bg-gray-50 px-4 py-3 rounded-lg">
+                    <code className="text-lg font-mono">{referralCode?.code}</code>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleCopyCode}
+                      className={copied ? 'text-green-600' : ''}
+                    >
+                      {copied ? (
+                        <CheckCircle className="h-4 w-4" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Referral Link */}
+            <div className="mb-6">
+              <p className="text-sm font-medium text-gray-600 mb-2">Your Referral Link</p>
+              <div className="flex items-center">
+                <div className="flex-1 truncate bg-gray-50 px-4 py-3 rounded-lg">
+                  <p className="truncate text-gray-700">
+                    {window.location.origin}/signup?ref={referralCode?.code}
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyLink}
+                  className="ml-4"
+                >
+                  Copy
+                </Button>
+              </div>
+            </div>
+
+            <div className="border-t pt-6">
+              <h3 className="font-medium mb-4">Share your referral link</h3>
+              <div className="flex flex-wrap gap-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleShare('twitter')}
+                >
+                  Twitter
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleShare('facebook')}
+                >
+                  Facebook
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleShare('whatsapp')}
+                >
+                  WhatsApp
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleShare('email')}
+                >
+                  Email
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Referral History */}
+          <ReferralHistory />
+        </div>
+        
+        <div>
+          {/* Rewards & Payout Section */}
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+            <h2 className="text-lg font-semibold mb-4">Rewards & Payout</h2>
+            
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-gray-600">Total Available</p>
+                  <p className="text-2xl font-bold">€{stats.rewardsEarned}</p>
+                </div>
+                <Button 
+                  variant="default"
+                  disabled={stats.rewardsEarned <= 0}
+                  onClick={() => setIsPayoutModalOpen(true)}
+                >
+                  Request Payout
+                </Button>
+              </div>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-700">
+                <p className="font-medium mb-1">How rewards work</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>You earn €4 for each successful referral</li>
+                  <li>Your friends get 20% off their annual plan</li>
+                  <li>Minimum payout amount: €10</li>
+                  <li>Payouts are processed within 7 business days</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          
+          {/* Terms and Conditions */}
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h2 className="text-lg font-semibold mb-4">Program Details</h2>
+            
+            <div className="text-sm text-gray-600">
+              <h3 className="font-medium text-gray-900 mb-2">How it works</h3>
+              <ol className="list-decimal pl-5 mb-4 space-y-1">
+                <li>Share your unique referral link or code with friends</li>
+                <li>When they sign up, they enter your code during registration</li>
+                <li>They get 20% off when choosing an annual plan</li>
+                <li>After their successful payment, you earn €4 commission</li>
+              </ol>
+
+              <h3 className="font-medium text-gray-900 mb-2">Terms & Conditions</h3>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>Referrals are only valid for new users</li>
+                <li>Commissions are earned when the referred user makes their first payment</li>
+                <li>We reserve the right to modify the program at any time</li>
+                <li>Fraudulent referrals will result in forfeiture of rewards</li>
+                <li>Payouts are processed via PayPal only</li>
+              </ul>
             </div>
           </div>
         </div>
-
-        <div className="border-t pt-6">
-          <h3 className="font-medium mb-4">Share your referral link</h3>
-          <div className="flex space-x-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleShare('twitter')}
-              className="flex-1"
-            >
-              Twitter
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleShare('facebook')}
-              className="flex-1"
-            >
-              Facebook
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleShare('whatsapp')}
-              className="flex-1"
-            >
-              WhatsApp
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleShare('email')}
-              className="flex-1"
-            >
-              Email
-            </Button>
-          </div>
-        </div>
       </div>
 
-      {/* Terms and Conditions */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-lg font-semibold mb-4">Program Details</h2>
-        <div className="prose prose-sm max-w-none text-gray-600">
-          <h3 className="text-base font-medium text-gray-900">How it works</h3>
-          <ul className="list-disc pl-5 mb-6">
-            <li>Share your unique referral code with friends</li>
-            <li>When they sign up using your code, they get $10 in credits</li>
-            <li>Once they make their first purchase, you earn $10 in credits</li>
-            <li>There's no limit to how many friends you can refer</li>
-          </ul>
-
-          <h3 className="text-base font-medium text-gray-900">Terms & Conditions</h3>
-          <ul className="list-disc pl-5">
-            <li>Referral rewards are only valid for new users</li>
-            <li>Credits expire after 12 months</li>
-            <li>We reserve the right to modify or terminate the referral program at any time</li>
-            <li>Fraudulent referrals will result in account suspension</li>
-          </ul>
-        </div>
-      </div>
+      <PayoutModal 
+        open={isPayoutModalOpen}
+        onOpenChange={setIsPayoutModalOpen}
+        rewardAmount={stats.rewardsEarned}
+        onSuccess={handlePayoutSuccess}
+      />
     </div>
   );
 }
