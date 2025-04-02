@@ -1,10 +1,20 @@
 
 import { supabase } from './supabase';
-import type { SocialConnection } from './types';
 
 // Paramètres de configuration Meta
 const FACEBOOK_APP_ID = '990797112672585';
 const INSTAGRAM_APP_ID = '525008276969587';
+
+// Fonction générique pour l'authentification Meta
+export function initiateMetaAuth(platform: 'facebook' | 'instagram') {
+  if (platform === 'facebook') {
+    return initiateFacebookAuth();
+  } else if (platform === 'instagram') {
+    return initiateInstagramAuth();
+  } else {
+    throw new Error('Plateforme non supportée');
+  }
+}
 
 // Fonctions pour l'authentification Meta
 export async function initiateFacebookAuth() {

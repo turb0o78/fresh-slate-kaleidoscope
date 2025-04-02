@@ -5,19 +5,20 @@ import { supabase } from '../../lib/supabase';
 import { useToast } from '../ui/toast';
 import { UploadIcon, Share2 } from 'lucide-react';
 
-type SocialConnection = {
+interface SocialConnection {
   platform: 'facebook' | 'instagram';
   access_token: string;
   profile_name: string;
   profile_id: string;
   page_id?: string;
   page_name?: string;
-};
+}
 
-type Connections = {
+interface Connections {
   facebook: SocialConnection | null;
   instagram: SocialConnection | null;
-};
+  [key: string]: SocialConnection | null; // Ajout d'un index signature pour résoudre l'erreur TS7053
+}
 
 export function MetaPublisher({ userId }: { userId: string }) {
   const [file, setFile] = useState<File | null>(null);
