@@ -115,7 +115,11 @@ export function WorkflowsPage() {
         </div>
       )}
 
-      {isCreating ? (
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        </div>
+      ) : isCreating ? (
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">Workflow Name</label>
