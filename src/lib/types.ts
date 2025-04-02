@@ -72,6 +72,7 @@ export interface WorkflowConfig {
   sourcePlatform: Platform;
   targetPlatforms: Platform[];
   autoPublish: boolean;
+  removeWatermark?: boolean;
   metadata: {
     copyTitle: boolean;
     copyDescription: boolean;

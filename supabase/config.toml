@@ -1,1 +1,11 @@
+
 project_id = "ngkbxqkdgqisjkbzpdyu"
+
+[functions.tiktok-webhook]
+verify_jwt = false
+
+[functions.tiktok-downloader]
+verify_jwt = true
+
+[functions.tiktok-video-cleanup]
+verify_jwt = true

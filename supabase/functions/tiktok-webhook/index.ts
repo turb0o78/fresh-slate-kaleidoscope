@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'npm:@supabase/supabase-js@2.39.3';
 import { createHmac } from 'node:crypto';
@@ -98,7 +99,8 @@ async function handleVideoUpload(event: any) {
 }
 
 async function handleVideoPublish(event: any) {
-  const { error } = await supabase
+  // Mettre à jour les informations de la vidéo
+  const { data: video, error } = await supabase
     .from('tiktok_videos')
     .update({
       share_url: event.share_url,
@@ -107,9 +109,84 @@ async function handleVideoPublish(event: any) {
         published_at: new Date().toISOString()
       }
     })
-    .eq('video_id', event.video_id);
+    .eq('video_id', event.video_id)
+    .select('*')
+    .single();
 
   if (error) throw error;
+  
+  // Chercher tous les workflows actifs de l'utilisateur qui ont TikTok comme source
+  const { data: connections, error: connError } = await supabase
+    .from('social_connections')
+    .select('user_id')
+    .eq('platform', 'tiktok')
+    .eq('platform_user_id', event.creator_id);
+    
+  if (connError) throw connError;
+  
+  if (!connections || connections.length === 0) {
+    console.log(`No user connected with TikTok creator_id: ${event.creator_id}`);
+    return;
+  }
+  
+  // Pour chaque utilisateur connecté avec ce compte TikTok
+  for (const connection of connections) {
+    const userId = connection.user_id;
+    
+    // Récupérer tous les workflows actifs de l'utilisateur qui utilisent TikTok comme source
+    const { data: workflows, error: workflowsError } = await supabase
+      .from('workflows')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('source_platform', 'tiktok')
+      .eq('is_active', true);
+      
+    if (workflowsError) {
+      console.error(`Error fetching workflows for user ${userId}: ${workflowsError.message}`);
+      continue;
+    }
+    
+    if (!workflows || workflows.length === 0) {
+      console.log(`No active TikTok workflows for user ${userId}`);
+      continue;
+    }
+    
+    // Pour chaque workflow actif, vérifier s'il faut télécharger sans watermark
+    for (const workflow of workflows) {
+      const config = workflow.config || {};
+      
+      if (config.removeWatermark) {
+        console.log(`Processing workflow ${workflow.id} with watermark removal`);
+        
+        // Appeler la fonction de téléchargement sans watermark
+        try {
+          const response = await fetch(`${supabaseUrl}/functions/v1/tiktok-downloader`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabaseServiceKey}`
+            },
+            body: JSON.stringify({
+              videoId: event.video_id,
+              workflowId: workflow.id,
+              userId: userId
+            })
+          });
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`Failed to download video without watermark: ${errorText}`);
+          } else {
+            console.log(`Successfully triggered watermark removal for video ${event.video_id}`);
+          }
+        } catch (err) {
+          console.error(`Error calling tiktok-downloader function: ${err.message}`);
+        }
+      } else {
+        console.log(`Workflow ${workflow.id} does not have watermark removal enabled`);
+      }
+    }
+  }
 }
 
 async function handleVideoPublishError(event: any) {

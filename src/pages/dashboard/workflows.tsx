@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Plus, ArrowRight, Play, Pause, Settings, AlertCircle } from 'lucide-react';
 import { Button } from '../../components/ui/button';
@@ -16,6 +17,7 @@ export function WorkflowsPage() {
     sourcePlatform: 'youtube',
     targetPlatforms: [],
     autoPublish: true,
+    removeWatermark: false,
     metadata: {
       copyTitle: true,
       copyDescription: true,
@@ -31,6 +33,7 @@ export function WorkflowsPage() {
 
   const loadWorkflows = async () => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('workflows')
         .select('*')
@@ -53,6 +56,7 @@ export function WorkflowsPage() {
       sourcePlatform: 'youtube',
       targetPlatforms: [],
       autoPublish: true,
+      removeWatermark: false,
       metadata: {
         copyTitle: true,
         copyDescription: true,
@@ -93,6 +97,33 @@ export function WorkflowsPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update workflow status');
     }
+  };
+
+  // Helper pour vérifier si la source est TikTok (pour l'option de suppression de watermark)
+  const isTikTokSource = () => workflowConfig.sourcePlatform === 'tiktok';
+
+  const renderWatermarkOption = () => {
+    if (!isTikTokSource()) return null;
+    
+    return (
+      <div className="mb-6">
+        <h2 className="text-lg font-medium mb-2">TikTok Options</h2>
+        <div className="space-y-4">
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+              checked={workflowConfig.removeWatermark || false}
+              onChange={(e) => setWorkflowConfig({
+                ...workflowConfig,
+                removeWatermark: e.target.checked
+              })}
+            />
+            <span className="ml-2">Download without watermark</span>
+          </label>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -177,6 +208,8 @@ export function WorkflowsPage() {
             </div>
           </div>
 
+          {renderWatermarkOption()}
+
           <div className="mb-6">
             <h2 className="text-lg font-medium mb-2">Content Settings</h2>
             <div className="space-y-4">
@@ -252,6 +285,13 @@ export function WorkflowsPage() {
                       <ArrowRight className="h-4 w-4 mx-2" />
                       <span>{workflow.target_platforms.map((p: Platform) => p.charAt(0).toUpperCase() + p.slice(1)).join(', ')}</span>
                     </div>
+                    {workflow.config?.removeWatermark && workflow.source_platform === 'tiktok' && (
+                      <div className="mt-1">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                          No Watermark
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center space-x-2">
                     <Button
