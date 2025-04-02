@@ -3,8 +3,6 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
 import { TikTokButton } from '../../components/social/tiktok-button';
-import { InstagramButton } from '../../components/social/instagram-button';
-import { FacebookButton } from '../../components/social/facebook-button';
 import { YouTubeButton } from '../../components/social/youtube-button';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../lib/auth';
@@ -27,9 +25,10 @@ export function ConnectionsPage() {
   useEffect(() => {
     const code = searchParams.get('code');
     const state = searchParams.get('state');
-    const platform = sessionStorage.getItem('oauth_platform');
+    const platform = sessionStorage.getItem('meta_auth_platform') || 
+                     sessionStorage.getItem('oauth_platform') as Platform | null;
 
-    if (code && state) {
+    if (code && state && platform) {
       handleCallback(code, state, platform as Platform);
     }
   }, [searchParams]);
@@ -152,7 +151,7 @@ export function ConnectionsPage() {
           isLoading={connectingPlatform === 'tiktok'}
         />
         
-        {/* Remplacer les anciens boutons par nos nouveaux components */}
+        {/* Connexions Facebook et Instagram */}
         {user && (
           <FacebookConnection 
             userId={user.id} 

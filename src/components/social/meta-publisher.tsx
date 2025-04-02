@@ -1,281 +1,234 @@
 
-import { useState, useEffect } from 'react';
-import { Upload } from 'lucide-react';
+import React, { useState } from 'react';
 import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from '../ui/dialog';
-import { AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../ui/toast';
-import { publishToFacebook, publishToInstagram } from '../../lib/meta-api';
+import { UploadIcon, Share2 } from 'lucide-react';
 
-interface MetaPublisherProps {
-  userId: string;
-}
+type SocialConnection = {
+  platform: 'facebook' | 'instagram';
+  access_token: string;
+  profile_name: string;
+  profile_id: string;
+  page_id?: string;
+  page_name?: string;
+};
 
-export function MetaPublisher({ userId }: MetaPublisherProps) {
-  const [isOpen, setIsOpen] = useState(false);
+type Connections = {
+  facebook: SocialConnection | null;
+  instagram: SocialConnection | null;
+};
+
+export function MetaPublisher({ userId }: { userId: string }) {
+  const [file, setFile] = useState<File | null>(null);
   const [caption, setCaption] = useState('');
-  const [mediaFile, setMediaFile] = useState<File | null>(null);
-  const [mediaPreview, setMediaPreview] = useState<string | null>(null);
-  const [selectedPlatform, setSelectedPlatform] = useState<'facebook' | 'instagram'>('instagram');
-  const [selectedPageId, setSelectedPageId] = useState<string>('');
-  const [facebookPages, setFacebookPages] = useState<any[]>([]);
-  const [isPublishing, setIsPublishing] = useState(false);
-  const [error, setError] = useState('');
-  const [connections, setConnections] = useState<any>({
-    facebook: null,
-    instagram: null,
-  });
-  
+  const [loading, setLoading] = useState(false);
+  const [connections, setConnections] = useState<Connections>({ facebook: null, instagram: null });
+  const [selectedPlatform, setSelectedPlatform] = useState<'facebook' | 'instagram' | null>(null);
   const { toast } = useToast();
-  
-  useEffect(() => {
+
+  // Charger les connections de l'utilisateur
+  React.useEffect(() => {
+    async function loadConnections() {
+      try {
+        const { data, error } = await supabase
+          .from('social_connections')
+          .select('*')
+          .eq('user_id', userId)
+          .in('platform', ['facebook', 'instagram']);
+        
+        if (error) throw error;
+        
+        const metaConnections: Connections = { facebook: null, instagram: null };
+        
+        if (data) {
+          data.forEach((connection) => {
+            if (connection.platform === 'facebook' || connection.platform === 'instagram') {
+              metaConnections[connection.platform] = connection as SocialConnection;
+            }
+          });
+        }
+        
+        setConnections(metaConnections);
+      } catch (error) {
+        console.error('Error loading connections:', error);
+      }
+    }
+    
     loadConnections();
   }, [userId]);
-  
-  useEffect(() => {
-    // Charger les pages Facebook lorsque la connexion Facebook est disponible
-    if (connections.facebook) {
-      const pages = connections.facebook.metadata?.pages || [];
-      setFacebookPages(pages);
-      if (pages.length > 0) {
-        setSelectedPageId(pages[0].id);
-      }
-    }
-  }, [connections.facebook]);
-  
-  const loadConnections = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('social_connections')
-        .select('*')
-        .eq('user_id', userId)
-        .in('platform', ['facebook', 'instagram']);
-        
-      if (error) throw error;
-      
-      const connectionsMap = {
-        facebook: null,
-        instagram: null,
-      };
-      
-      if (data) {
-        data.forEach((conn) => {
-          connectionsMap[conn.platform] = conn;
-        });
-      }
-      
-      setConnections(connectionsMap);
-    } catch (err) {
-      console.error('Error loading social connections:', err);
-      setError('Failed to load social connections');
-    }
-  };
-  
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setMediaFile(file);
-      
-      // Créer une URL pour la prévisualisation
-      const preview = URL.createObjectURL(file);
-      setMediaPreview(preview);
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(e.target.files[0]);
     }
   };
-  
-  const handlePublish = async () => {
-    if (!mediaFile) {
-      setError('Please select an image or video to publish');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedPlatform) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez sélectionner une plateforme",
+      });
       return;
     }
     
-    setIsPublishing(true);
-    setError('');
+    if (!connections[selectedPlatform]) {
+      toast({
+        title: "Erreur",
+        description: `Vous n'êtes pas connecté à ${selectedPlatform}`,
+      });
+      return;
+    }
+    
+    if (!file) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez sélectionner un fichier à publier",
+      });
+      return;
+    }
+    
+    setLoading(true);
     
     try {
-      // 1. Télécharger le fichier vers Supabase Storage
-      const fileExt = mediaFile.name.split('.').pop();
-      const fileName = `${crypto.randomUUID()}.${fileExt}`;
-      const filePath = `uploads/${userId}/${fileName}`;
+      // Uploader le fichier sur Supabase Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `${userId}/${fileName}`;
       
       const { error: uploadError } = await supabase.storage
         .from('media')
-        .upload(filePath, mediaFile);
-        
+        .upload(filePath, file);
+      
       if (uploadError) throw uploadError;
       
-      // 2. Obtenir l'URL publique du fichier
-      const { data: { publicUrl } } = supabase.storage
+      // Récupérer l'URL publique du fichier
+      const { data: publicUrl } = await supabase.storage
         .from('media')
         .getPublicUrl(filePath);
-        
-      // 3. Publier sur la plateforme sélectionnée
-      let result;
       
-      if (selectedPlatform === 'instagram') {
-        result = await publishToInstagram(userId, {
-          caption,
-          mediaUrl: publicUrl,
-          mediaType: mediaFile.type.includes('video') ? 'VIDEO' : 'IMAGE',
-        });
-      } else {
-        result = await publishToFacebook(userId, selectedPageId, {
-          caption,
-          mediaUrl: publicUrl,
-          mediaType: mediaFile.type.includes('video') ? 'VIDEO' : 'IMAGE',
-        });
-      }
+      if (!publicUrl) throw new Error("Impossible d'obtenir l'URL publique du fichier");
       
-      if (!result.success) {
-        throw new Error(result.error || 'Publication failed');
-      }
-      
-      // 4. Notification de succès
-      toast({
-        title: 'Posted Successfully',
-        description: `Your post was published to ${selectedPlatform.charAt(0).toUpperCase() + selectedPlatform.slice(1)}`,
+      // Envoyer la demande de publication
+      const { error: publishError } = await supabase.functions.invoke('meta-publish', {
+        body: {
+          platform: selectedPlatform,
+          mediaUrl: publicUrl.publicUrl,
+          caption: caption,
+          connection_id: connections[selectedPlatform]?.profile_id,
+          page_id: connections[selectedPlatform]?.page_id,
+        },
       });
       
-      // 5. Réinitialiser le formulaire et fermer le dialogue
-      setCaption('');
-      setMediaFile(null);
-      setMediaPreview(null);
-      setIsOpen(false);
+      if (publishError) throw publishError;
       
-    } catch (err) {
-      console.error('Error publishing post:', err);
-      setError(err instanceof Error ? err.message : 'Failed to publish post');
+      toast({
+        title: "Succès",
+        description: `Contenu publié sur ${selectedPlatform} avec succès`,
+      });
+      
+      // Réinitialiser le formulaire
+      setFile(null);
+      setCaption('');
+      
+    } catch (error) {
+      console.error('Error publishing content:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la publication",
+      });
     } finally {
-      setIsPublishing(false);
+      setLoading(false);
     }
   };
-  
+
   return (
-    <>
-      <Button
-        onClick={() => setIsOpen(true)}
-        className="bg-gradient-to-r from-blue-600 to-purple-500 text-white"
-      >
-        <Upload className="h-4 w-4 mr-2" />
-        Publish to Social Media
-      </Button>
+    <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
+      <h2 className="text-lg font-semibold mb-4">Publier du contenu</h2>
       
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogTitle>Publish to Social Media</DialogTitle>
-          <DialogDescription>
-            Create a new post for Instagram or Facebook
-          </DialogDescription>
-          
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-3 flex items-center space-x-2 text-red-600 text-sm mt-4">
-              <AlertCircle className="h-4 w-4 flex-shrink-0" />
-              <span>{error}</span>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-2">Sélectionner une plateforme</label>
+          <div className="flex space-x-4">
+            <Button
+              type="button"
+              variant={selectedPlatform === 'facebook' ? 'default' : 'outline'}
+              onClick={() => setSelectedPlatform('facebook')}
+              disabled={!connections.facebook}
+              className="flex-1"
+            >
+              Facebook {!connections.facebook && '(Non connecté)'}
+            </Button>
+            <Button
+              type="button"
+              variant={selectedPlatform === 'instagram' ? 'default' : 'outline'}
+              onClick={() => setSelectedPlatform('instagram')}
+              disabled={!connections.instagram}
+              className="flex-1"
+            >
+              Instagram {!connections.instagram && '(Non connecté)'}
+            </Button>
+          </div>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium mb-2">Légende</label>
+          <textarea
+            className="w-full p-2 border rounded-md"
+            value={caption}
+            onChange={(e) => setCaption(e.target.value)}
+            placeholder="Écrivez une légende pour votre publication..."
+            rows={3}
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium mb-2">Image ou Vidéo</label>
+          <div className="flex items-center justify-center w-full">
+            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+              <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                <UploadIcon className="w-10 h-10 mb-3 text-gray-400" />
+                <p className="mb-2 text-sm text-gray-500">
+                  <span className="font-semibold">Cliquez pour télécharger</span> ou glissez-déposez
+                </p>
+                <p className="text-xs text-gray-500">SVG, PNG, JPG or GIF (MAX. 10MB)</p>
+              </div>
+              <input
+                type="file"
+                className="hidden"
+                onChange={handleFileChange}
+                accept="image/*,video/*"
+              />
+            </label>
+          </div>
+          {file && (
+            <div className="mt-2">
+              <p className="text-sm text-gray-600">Fichier sélectionné: {file.name}</p>
             </div>
           )}
-          
-          <div className="mt-4 space-y-4">
-            <div className="flex flex-col space-y-2">
-              <Label>Platform</Label>
-              <div className="flex space-x-2">
-                <Button
-                  type="button"
-                  variant={selectedPlatform === 'instagram' ? 'default' : 'outline'}
-                  onClick={() => setSelectedPlatform('instagram')}
-                  disabled={!connections.instagram}
-                  className={selectedPlatform === 'instagram' ? 'bg-gradient-to-r from-pink-500 to-purple-500' : ''}
-                >
-                  Instagram
-                </Button>
-                <Button
-                  type="button"
-                  variant={selectedPlatform === 'facebook' ? 'default' : 'outline'}
-                  onClick={() => setSelectedPlatform('facebook')}
-                  disabled={!connections.facebook}
-                  className={selectedPlatform === 'facebook' ? 'bg-blue-600' : ''}
-                >
-                  Facebook
-                </Button>
-              </div>
-              
-              {selectedPlatform === 'facebook' && facebookPages.length > 0 && (
-                <div className="mt-3">
-                  <Label>Select Page</Label>
-                  <select
-                    value={selectedPageId}
-                    onChange={(e) => setSelectedPageId(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md p-2 mt-1"
-                  >
-                    {facebookPages.map((page) => (
-                      <option key={page.id} value={page.id}>
-                        {page.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-            </div>
-            
-            <div>
-              <Label htmlFor="caption">Caption</Label>
-              <textarea
-                id="caption"
-                value={caption}
-                onChange={(e) => setCaption(e.target.value)}
-                className="w-full border border-gray-300 rounded-md p-2 h-24"
-                placeholder="Write a caption for your post..."
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="media">Media (image or video)</Label>
-              <Input
-                id="media"
-                type="file"
-                accept="image/*,video/*"
-                onChange={handleFileChange}
-              />
-              
-              {mediaPreview && (
-                <div className="mt-3 rounded-md overflow-hidden border border-gray-200">
-                  {mediaFile?.type.includes('image') ? (
-                    <img 
-                      src={mediaPreview} 
-                      alt="Preview" 
-                      className="max-h-48 w-full object-contain"
-                    />
-                  ) : (
-                    <video 
-                      src={mediaPreview} 
-                      controls 
-                      className="max-h-48 w-full"
-                    />
-                  )}
-                </div>
-              )}
-            </div>
-            
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsOpen(false)}
-                disabled={isPublishing}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handlePublish}
-                disabled={isPublishing || !mediaFile}
-              >
-                {isPublishing ? 'Publishing...' : 'Publish Now'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+        </div>
+        
+        <Button
+          type="submit"
+          disabled={loading || !selectedPlatform || !file}
+          className="w-full"
+        >
+          {loading ? (
+            <span className="flex items-center">
+              <span className="animate-spin h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full"></span>
+              Publication en cours...
+            </span>
+          ) : (
+            <span className="flex items-center">
+              <Share2 className="mr-2 h-4 w-4" />
+              Publier sur {selectedPlatform && selectedPlatform.charAt(0).toUpperCase() + selectedPlatform.slice(1)}
+            </span>
+          )}
+        </Button>
+      </form>
+    </div>
   );
 }
