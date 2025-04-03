@@ -42,7 +42,7 @@ enable_confirmations = false
 [realtime]
 enabled = true
 
-[edge_functions]
+[functions]
 enabled = true
 
 [functions.meta-auth]
@@ -53,3 +53,15 @@ verify_jwt = true
 
 [functions.meta-webhook]
 verify_jwt = false
+
+[functions.tiktok-webhook]
+verify_jwt = false
+
+[functions.tiktok-downloader]
+verify_jwt = true
+
+[functions.webhook-handler]
+verify_jwt = false
+
+[functions.workflow-processor]
+verify_jwt = true
