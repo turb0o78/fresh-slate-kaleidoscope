@@ -14,9 +14,10 @@ console.log("Supabase URL configured:", !!supabaseUrl);
 console.log("Supabase service key configured:", !!supabaseServiceKey);
 console.log("TikTok client key configured:", !!tiktokClientKey);
 console.log("TikTok client secret configured:", !!tiktokClientSecret);
+console.log("Mode: Sandbox");
 
 if (!tiktokClientKey) {
-  console.error("ATTENTION: TIKTOK_CLIENT_ID n'est pas configuré dans l'environnement Supabase");
+  console.warn("ATTENTION: TIKTOK_CLIENT_ID n'est pas configuré dans l'environnement Supabase, utilisation du mode sandbox");
 }
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey, {
@@ -33,35 +34,52 @@ const corsHeaders = {
 };
 
 // Fonction pour télécharger une vidéo TikTok sans watermark
-async function downloadTikTokVideo(videoId: string): Promise<ArrayBuffer> {
+async function downloadTikTokVideo(videoId: string, isSandboxMode: boolean = false): Promise<ArrayBuffer> {
   try {
-    console.log(`Téléchargement de la vidéo TikTok ${videoId} sans watermark`);
+    console.log(`Téléchargement de la vidéo TikTok ${videoId} sans watermark (mode: ${isSandboxMode ? 'sandbox' : 'production'})`);
     
     // Construire l'URL TikTok complète si seulement l'ID est fourni
     const tiktokUrl = videoId.includes('tiktok.com') 
       ? videoId 
       : `https://www.tiktok.com/@username/video/${videoId}`;
     
-    // Utiliser l'API TikTok ou un service tiers pour télécharger sans watermark
-    // Cette implémentation dépendra de l'API spécifique que vous utilisez
-    
-    // Exemple simplifié - Dans une implémentation réelle, vous utiliseriez l'API TikTok
-    // ou un service tiers avec les identifiants appropriés
-    const apiUrl = `https://api.example.com/tiktok/download?url=${encodeURIComponent(tiktokUrl)}&client_key=${tiktokClientKey}`;
-    
-    console.log(`Appel de l'API de téléchargement`);
-    const response = await fetch(apiUrl);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Échec du téléchargement: ${response.status} - ${errorText}`);
+    if (isSandboxMode) {
+      console.log("Mode sandbox activé - Génération d'une vidéo fictive");
+      
+      // En mode sandbox, on génère une vidéo fictive
+      // Pour cet exemple, nous utilisons un GIF d'exemple converti en ArrayBuffer
+      const sampleVideoUrl = 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExd2xvcGRuN3hzOHR4N3BjanA5NnlmcXQ5dWlscWlyOGZpNmhma2k0MCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l41lLs970IlDrkKpG/giphy.gif';
+      
+      const response = await fetch(sampleVideoUrl);
+      if (!response.ok) {
+        throw new Error(`Échec du téléchargement de l'exemple: ${response.status}`);
+      }
+      
+      const videoBuffer = await response.arrayBuffer();
+      console.log(`Vidéo d'exemple générée, taille: ${videoBuffer.byteLength} octets`);
+      
+      return videoBuffer;
+    } else {
+      // Utiliser l'API TikTok ou un service tiers pour télécharger sans watermark
+      // Cette implémentation dépendra de l'API spécifique que vous utilisez
+      
+      // Exemple simplifié - Dans une implémentation réelle, vous utiliseriez l'API TikTok
+      // ou un service tiers avec les identifiants appropriés
+      const apiUrl = `https://api.example.com/tiktok/download?url=${encodeURIComponent(tiktokUrl)}&client_key=${tiktokClientKey}`;
+      
+      console.log(`Appel de l'API de téléchargement`);
+      const response = await fetch(apiUrl);
+      
+      if (!response.ok) {
+        throw new Error(`Échec du téléchargement: ${response.status}`);
+      }
+      
+      // Récupérer la vidéo en tant qu'ArrayBuffer
+      const videoBuffer = await response.arrayBuffer();
+      console.log(`Vidéo téléchargée avec succès, taille: ${videoBuffer.byteLength} octets`);
+      
+      return videoBuffer;
     }
-    
-    // Récupérer la vidéo en tant qu'ArrayBuffer
-    const videoBuffer = await response.arrayBuffer();
-    console.log(`Vidéo téléchargée avec succès, taille: ${videoBuffer.byteLength} octets`);
-    
-    return videoBuffer;
   } catch (error) {
     console.error("Erreur lors du téléchargement de la vidéo TikTok:", error);
     throw error;
@@ -82,16 +100,16 @@ serve(async (req) => {
     }
 
     // Récupérer les données de la requête
-    const { videoId, userId, workflowId, expiresAt } = await req.json();
+    const { videoId, userId, workflowId, expiresAt, sandbox = (!tiktokClientKey || !tiktokClientSecret) } = await req.json();
 
     if (!videoId || !userId || !workflowId || !expiresAt) {
       throw new Error('Paramètres manquants: videoId, userId, workflowId et expiresAt sont requis');
     }
 
-    console.log(`Demande de téléchargement pour la vidéo ${videoId}, utilisateur ${userId}, workflow ${workflowId}`);
+    console.log(`Demande de téléchargement pour la vidéo ${videoId}, utilisateur ${userId}, workflow ${workflowId}, mode: ${sandbox ? 'sandbox' : 'production'}`);
     
     // Télécharger la vidéo sans watermark
-    const videoBuffer = await downloadTikTokVideo(videoId);
+    const videoBuffer = await downloadTikTokVideo(videoId, sandbox);
     
     // Chemin de stockage dans le bucket (user_id/workflow_id/video_id.mp4)
     const storagePath = `${userId}/${workflowId}/${videoId}.mp4`;
@@ -134,6 +152,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         message: 'Vidéo téléchargée avec succès',
+        sandbox_mode: sandbox,
         video_id: insertData.id,
         storage_path: storagePath,
         expires_at: expiresAt
