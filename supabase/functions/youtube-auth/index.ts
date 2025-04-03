@@ -2,10 +2,10 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { google } from "npm:googleapis@126.0.1";
 
-// Récupération des variables d'environnement
-const YOUTUBE_CLIENT_ID = Deno.env.get('YOUTUBE_CLIENT_ID') || '';
-const YOUTUBE_CLIENT_SECRET = Deno.env.get('YOUTUBE_CLIENT_SECRET') || '';
-const REDIRECT_URI = Deno.env.get('VITE_YOUTUBE_REDIRECT_URI') || 'https://id-preview--cc3685fd-9c23-4caa-b619-780c74b89cd1.lovable.app/dashboard/connections';
+// Clés d'API YouTube hardcodées pour garantir leur disponibilité
+const YOUTUBE_CLIENT_ID = '716459993916-dtfg52nflg5jdrna5vtg2h4ahupvt7bs.apps.googleusercontent.com';
+const YOUTUBE_CLIENT_SECRET = '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';
+const REDIRECT_URI = 'https://id-preview--cc3685fd-9c23-4caa-b619-780c74b89cd1.lovable.app/dashboard/connections';
 
 // Headers CORS
 const corsHeaders = {

@@ -23,6 +23,7 @@ export function YouTubeButton({ connection, onConnect, onDisconnect, isLoading }
   const handleConnect = async () => {
     try {
       setLocalLoading(true);
+      console.log("Tentative de connexion à YouTube...");
       await onConnect();
     } catch (error) {
       console.error("Erreur lors de la connexion à YouTube:", error);
