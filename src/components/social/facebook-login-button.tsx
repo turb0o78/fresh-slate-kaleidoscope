@@ -17,7 +17,7 @@ interface FacebookLoginButtonProps {
 export function FacebookLoginButton({ onConnected }: FacebookLoginButtonProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { fbAuthStatus, isLoading, login } = useFacebookAuth();
+  const { isLoading, login } = useFacebookAuth();
   const buttonRef = useRef<HTMLDivElement>(null);
 
   // Définir la fonction de callback globale pour le bouton FB
@@ -53,7 +53,8 @@ export function FacebookLoginButton({ onConnected }: FacebookLoginButtonProps) {
 
     return () => {
       // Nettoyer la fonction globale à la suppression du composant
-      delete window.checkLoginState;
+      // Correction : utiliser undefined au lieu de delete
+      window.checkLoginState = undefined as any;
     };
   }, [user, toast, login, onConnected]);
 

@@ -8,6 +8,10 @@ interface FacebookLoginStatus {
     signedRequest: string;
     userID: string;
   };
+  // Ajout des propriétés supplémentaires pour éviter les erreurs TypeScript
+  profile?: any;
+  pages?: any[];
+  instagramAccounts?: any[];
 }
 
 interface FacebookLoginOptions {
@@ -27,8 +31,13 @@ declare global {
       login: (callback: (response: FacebookLoginStatus) => void, options?: FacebookLoginOptions) => void;
       logout: (callback: (response: any) => void) => void;
       getLoginStatus: (callback: (response: FacebookLoginStatus) => void) => void;
-      api: (path: string, callback: (response: any) => void) => void;
-      api: (path: string, method: string, params: any, callback: (response: any) => void) => void;
+      // Correction de la définition dupliquée de api
+      api: ((path: string, callback: (response: any) => void) => void) & 
+           ((path: string, method: string, params: any, callback: (response: any) => void) => void);
+      // Ajout de XFBML pour la partie rendu des boutons
+      XFBML: {
+        parse: (element?: HTMLElement) => void;
+      };
     };
   }
 }
@@ -102,7 +111,8 @@ export const getUserInfo = (): Promise<any> => {
       return;
     }
 
-    window.FB.api('/me', { fields: 'id,name,email' }, (response) => {
+    // Correction du nombre d'arguments
+    window.FB.api('/me', { fields: 'id,name,email' }, (response: any) => {
       if (response && !response.error) {
         resolve(response);
       } else {
@@ -122,7 +132,8 @@ export const getUserPages = (): Promise<any[]> => {
       return;
     }
 
-    window.FB.api('/me/accounts', { fields: 'id,name,access_token,category,instagram_business_account' }, (response) => {
+    // Correction du nombre d'arguments
+    window.FB.api('/me/accounts', { fields: 'id,name,access_token,category,instagram_business_account' }, (response: any) => {
       if (response && !response.error) {
         resolve(response.data || []);
       } else {
