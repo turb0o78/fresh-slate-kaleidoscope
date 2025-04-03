@@ -5,7 +5,6 @@ import { google } from "npm:googleapis@126.0.1";
 // Clés d'API YouTube hardcodées pour garantir leur disponibilité
 const YOUTUBE_CLIENT_ID = '716459993916-dtfg52nflg5jdrna5vtg2h4ahupvt7bs.apps.googleusercontent.com';
 const YOUTUBE_CLIENT_SECRET = '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';
-const REDIRECT_URI = 'https://id-preview--cc3685fd-9c23-4caa-b619-780c74b89cd1.lovable.app/dashboard/connections';
 
 // Headers CORS
 const corsHeaders = {
@@ -21,10 +20,7 @@ serve(async (req) => {
 
   try {
     console.log("Traitement de l'authentification YouTube");
-    console.log("Client ID:", YOUTUBE_CLIENT_ID ? "Configuré" : "Non configuré");
-    console.log("Client Secret:", YOUTUBE_CLIENT_SECRET ? "Configuré" : "Non configuré");
-    console.log("URI de redirection:", REDIRECT_URI);
-
+    
     // Récupérer le code d'autorisation et l'URI de redirection
     const { code, redirect_uri } = await req.json();
     
@@ -33,12 +29,13 @@ serve(async (req) => {
     }
     
     console.log("Code d'autorisation YouTube reçu");
+    console.log("URI de redirection reçue:", redirect_uri);
 
     // Initialiser le client OAuth2
     const oauth2Client = new google.auth.OAuth2(
       YOUTUBE_CLIENT_ID,
       YOUTUBE_CLIENT_SECRET,
-      redirect_uri || REDIRECT_URI
+      redirect_uri
     );
     
     // Échanger le code contre des tokens

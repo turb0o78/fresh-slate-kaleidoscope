@@ -14,17 +14,23 @@ type OAuthProvider = {
 // Clés d'API directement dans le code pour garantir leur disponibilité
 // Ces valeurs seront utilisées si les variables d'environnement ne sont pas disponibles
 const YOUTUBE_CLIENT_ID = '716459993916-dtfg52nflg5jdrna5vtg2h4ahupvt7bs.apps.googleusercontent.com';
-const YOUTUBE_REDIRECT_URI = 'https://id-preview--cc3685fd-9c23-4caa-b619-780c74b89cd1.lovable.app/dashboard/connections';
+const YOUTUBE_CLIENT_SECRET = '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';
 
 // Pour TikTok, nous utiliserons un mode sandbox si les clés ne sont pas disponibles
-const TIKTOK_CLIENT_KEY = 'awnny4j78qpvbt87'; // Clé sandbox TikTok
-const TIKTOK_REDIRECT_URI = 'https://id-preview--cc3685fd-9c23-4caa-b619-780c74b89cd1.lovable.app/dashboard/connections';
+const TIKTOK_CLIENT_KEY = 'awnny4j78qpvbt87';
+const TIKTOK_CLIENT_SECRET = 'a76161b9f85de465ae8a824458d9c4f8569c24a0';
+
+// Utiliser l'URL actuelle du domaine pour les redirections
+const DOMAIN_URL = window.location.origin;
+const YOUTUBE_REDIRECT_URI = `${DOMAIN_URL}/dashboard/connections`;
+const TIKTOK_REDIRECT_URI = `${DOMAIN_URL}/dashboard/connections`;
 
 console.log("Configuration OAuth initializing");
 console.log("YouTube Client ID:", YOUTUBE_CLIENT_ID ? "Configuré" : "Non configuré");
 console.log("TikTok Client ID:", TIKTOK_CLIENT_KEY ? "Configuré" : "Non configuré");
 console.log("YouTube Redirect URI:", YOUTUBE_REDIRECT_URI);
 console.log("TikTok Redirect URI:", TIKTOK_REDIRECT_URI);
+console.log("Domaine actuel:", DOMAIN_URL);
 
 const OAUTH_PROVIDERS: Record<Platform, OAuthProvider> = {
   youtube: {
@@ -89,6 +95,7 @@ export async function initiateSocialAuth(platform: Platform) {
     if (platform === 'youtube') {
       console.log("Redirection vers l'autorisation YouTube...");
       console.log("Client ID:", provider.clientId.substring(0, 5) + '...');
+      console.log("Redirect URI:", provider.redirectUri);
       
       const params = new URLSearchParams();
       params.append('client_id', provider.clientId);
@@ -100,7 +107,7 @@ export async function initiateSocialAuth(platform: Platform) {
       params.append('prompt', 'consent');
       
       const fullUrl = `${provider.url}?${params.toString()}`;
-      console.log('URL de redirection YouTube:', fullUrl);
+      console.log('URL de redirection YouTube complète:', fullUrl);
       
       window.location.href = fullUrl;
       return;
@@ -110,6 +117,7 @@ export async function initiateSocialAuth(platform: Platform) {
     else if (platform === 'tiktok') {
       console.log("Redirection vers l'autorisation TikTok...");
       console.log("Client Key:", provider.clientId.substring(0, 5) + '...');
+      console.log("Redirect URI:", provider.redirectUri);
       
       const params = new URLSearchParams();
       params.append('client_key', provider.clientId);
@@ -119,7 +127,7 @@ export async function initiateSocialAuth(platform: Platform) {
       params.append('state', state);
       
       const fullUrl = `${provider.url}?${params.toString()}`;
-      console.log('URL de redirection TikTok:', fullUrl);
+      console.log('URL de redirection TikTok complète:', fullUrl);
       
       window.location.href = fullUrl;
       return;
@@ -169,6 +177,8 @@ export async function handleOAuthCallback(code: string, state: string) {
     // Pour YouTube
     if (platform === 'youtube') {
       console.log("Traitement du retour OAuth YouTube");
+      const redirectUri = YOUTUBE_REDIRECT_URI;
+      console.log("Redirect URI utilisé pour l'échange:", redirectUri);
       
       // Échanger le code contre un token d'accès via le backend
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL || 'https://ngkbxqkdgqisjkbzpdyu.supabase.co'}/functions/v1/youtube-auth`, {
@@ -179,7 +189,7 @@ export async function handleOAuthCallback(code: string, state: string) {
         },
         body: JSON.stringify({ 
           code, 
-          redirect_uri: OAUTH_PROVIDERS.youtube.redirectUri 
+          redirect_uri: redirectUri
         })
       });
       

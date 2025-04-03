@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Button } from '../ui/button';
-import { Music, Plus, Trash2, Check, Loader2 } from 'lucide-react';
+import { Music, Plus, Trash2, Check, Loader2, AlertCircle } from 'lucide-react';
 import type { SocialConnection } from '../../lib/types';
 import { useToast } from '../ui/toast';
 
@@ -15,6 +15,7 @@ interface TikTokButtonProps {
 export function TikTokButton({ connection, onConnect, onDisconnect, isLoading }: TikTokButtonProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [localLoading, setLocalLoading] = useState(false);
+  const [showError, setShowError] = useState(false);
   const { toast } = useToast();
   
   // Le mode sandbox est toujours activé car nous l'utilisons par défaut
@@ -23,12 +24,14 @@ export function TikTokButton({ connection, onConnect, onDisconnect, isLoading }:
   const handleConnect = async () => {
     try {
       setLocalLoading(true);
+      setShowError(false);
       console.log("Tentative de connexion à TikTok...");
       
       // Utiliser la fonction de connexion TikTok
       await onConnect();
     } catch (error) {
       console.error("Erreur lors de l'initialisation de l'authentification TikTok:", error);
+      setShowError(true);
       toast({
         title: "Échec de connexion",
         description: error instanceof Error ? error.message : "Erreur lors de la connexion à TikTok",
@@ -104,6 +107,19 @@ export function TikTokButton({ connection, onConnect, onDisconnect, isLoading }:
           </Button>
         )}
       </div>
+
+      {showError && !connection && (
+        <div className="bg-red-50 rounded-lg p-3 mt-3 mb-3 flex items-center space-x-3 border border-red-200">
+          <div className="bg-red-100 p-1.5 rounded-full">
+            <AlertCircle className="h-3.5 w-3.5 text-red-600" />
+          </div>
+          <div className="flex-1">
+            <span className="text-sm text-red-700">
+              Problème de connexion TikTok. Mode Sandbox activé pour le test.
+            </span>
+          </div>
+        </div>
+      )}
 
       {connection && (
         <div className="bg-secondary-50 rounded-lg p-3 flex items-center space-x-3">
