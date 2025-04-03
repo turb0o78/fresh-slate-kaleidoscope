@@ -2,10 +2,9 @@
 import { useState } from 'react';
 import { Button } from '../ui/button';
 import { Facebook, Loader2 } from 'lucide-react';
-import { FacebookSDK } from '../../lib/facebook-sdk';
 import { useToast } from '../ui/toast';
-import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../lib/auth';
+import { useFacebookAuth } from '../../hooks/useFacebookAuth';
 
 interface FacebookSDKButtonProps {
   onConnected?: (data: any) => void;
@@ -15,6 +14,7 @@ export function FacebookSDKButton({ onConnected }: FacebookSDKButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { login } = useFacebookAuth();
 
   const handleLogin = async () => {
     if (!user) {
@@ -28,58 +28,22 @@ export function FacebookSDKButton({ onConnected }: FacebookSDKButtonProps) {
     setIsLoading(true);
 
     try {
-      // Vérifier si le SDK est chargé
-      if (!FacebookSDK.isLoaded()) {
-        throw new Error("Le SDK Facebook n'est pas chargé correctement");
-      }
-
-      // Lancer le processus de connexion
-      const loginResponse = await FacebookSDK.login();
+      // Utiliser le hook de connexion Facebook
+      const loginResponse = await login();
       
-      if (!loginResponse.authResponse) {
+      if (!loginResponse || loginResponse.status !== 'connected') {
         throw new Error("Échec de la connexion à Facebook");
       }
 
-      // Récupérer les informations de l'utilisateur
-      const userInfo = await FacebookSDK.getUserInfo();
-      
-      // Récupérer les pages de l'utilisateur
-      const pages = await FacebookSDK.getUserPages();
-      
-      // Récupérer les comptes Instagram associés
-      const instagramAccounts = await FacebookSDK.getInstagramAccounts(pages);
-
-      // Enregistrer les données dans Supabase
-      const { error } = await supabase
-        .from('social_connections')
-        .upsert({
-          user_id: user.id,
-          platform: 'facebook',
-          platform_user_id: userInfo.id,
-          platform_username: userInfo.name,
-          access_token: loginResponse.authResponse.accessToken,
-          metadata: { 
-            profile: userInfo, 
-            pages,
-            instagram_accounts: instagramAccounts
-          }
-        }, {
-          onConflict: 'user_id, platform'
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Connexion réussie",
-        description: "Votre compte Facebook a été connecté avec succès"
-      });
+      // Récupérer les données Facebook pour les passer au callback
+      const callbackData = {
+        userInfo: loginResponse.profile,
+        pages: loginResponse.pages,
+        instagramAccounts: loginResponse.instagramAccounts
+      };
 
       if (onConnected) {
-        onConnected({
-          userInfo,
-          pages,
-          instagramAccounts
-        });
+        onConnected(callbackData);
       }
 
     } catch (error) {

@@ -1,15 +1,21 @@
 
-import { useState } from 'react';
-import { FacebookSDKButton } from '../components/social/facebook-sdk-button';
+import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { useAuth } from '../lib/auth';
+import { useFacebookAuth } from '../hooks/useFacebookAuth';
+import { FacebookStatusDisplay } from '../components/social/facebook-status-display';
+import { Facebook, LogOut } from 'lucide-react';
 
 export function FacebookSDKDemoPage() {
   const { user } = useAuth();
-  const [facebookData, setFacebookData] = useState<any>(null);
+  const { fbAuthStatus, isLoading, login, logout } = useFacebookAuth();
 
-  const handleConnected = (data: any) => {
-    setFacebookData(data);
+  const handleLogin = async () => {
+    await login();
+  };
+
+  const handleLogout = async () => {
+    await logout();
   };
 
   return (
@@ -26,15 +32,43 @@ export function FacebookSDKDemoPage() {
             <CardHeader>
               <CardTitle>Connexion avec le SDK Facebook</CardTitle>
               <CardDescription>
-                Connectez votre compte Facebook pour accéder à vos pages et comptes Instagram
+                Le SDK Facebook vérifie automatiquement votre statut de connexion au chargement de la page
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <FacebookSDKButton onConnected={handleConnected} />
+            <CardContent className="space-y-4">
+              <div>
+                <FacebookStatusDisplay 
+                  authStatus={fbAuthStatus} 
+                  isLoading={isLoading} 
+                />
+              </div>
+
+              <div className="flex space-x-4">
+                {(!fbAuthStatus || fbAuthStatus.status !== 'connected') ? (
+                  <Button 
+                    onClick={handleLogin}
+                    disabled={isLoading}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Facebook className="h-4 w-4 mr-2" />
+                    Se connecter avec Facebook
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={handleLogout}
+                    disabled={isLoading}
+                    variant="outline"
+                    className="text-red-600 hover:bg-red-50"
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Se déconnecter de Facebook
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
 
-          {facebookData && (
+          {fbAuthStatus && fbAuthStatus.status === 'connected' && (
             <Card>
               <CardHeader>
                 <CardTitle>Données récupérées</CardTitle>
@@ -44,45 +78,51 @@ export function FacebookSDKDemoPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold">Utilisateur</h3>
-                    <pre className="bg-gray-100 p-2 rounded text-sm overflow-x-auto">
-                      {JSON.stringify(facebookData.userInfo, null, 2)}
-                    </pre>
-                  </div>
+                  {fbAuthStatus.profile && (
+                    <div>
+                      <h3 className="font-semibold">Utilisateur</h3>
+                      <pre className="bg-gray-100 p-2 rounded text-sm overflow-x-auto">
+                        {JSON.stringify(fbAuthStatus.profile, null, 2)}
+                      </pre>
+                    </div>
+                  )}
                   
-                  <div>
-                    <h3 className="font-semibold">Pages Facebook ({facebookData.pages?.length || 0})</h3>
-                    {facebookData.pages?.length > 0 ? (
-                      <div className="grid gap-2">
-                        {facebookData.pages.map((page: any) => (
-                          <div key={page.id} className="bg-gray-100 p-2 rounded">
-                            <p><strong>Nom:</strong> {page.name}</p>
-                            <p><strong>Catégorie:</strong> {page.category}</p>
-                            <p><strong>ID:</strong> {page.id}</p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-gray-500">Aucune page trouvée</p>
-                    )}
-                  </div>
+                  {fbAuthStatus.pages && (
+                    <div>
+                      <h3 className="font-semibold">Pages Facebook ({fbAuthStatus.pages.length || 0})</h3>
+                      {fbAuthStatus.pages.length > 0 ? (
+                        <div className="grid gap-2">
+                          {fbAuthStatus.pages.map((page: any) => (
+                            <div key={page.id} className="bg-gray-100 p-2 rounded">
+                              <p><strong>Nom:</strong> {page.name}</p>
+                              <p><strong>Catégorie:</strong> {page.category}</p>
+                              <p><strong>ID:</strong> {page.id}</p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-gray-500">Aucune page trouvée</p>
+                      )}
+                    </div>
+                  )}
                   
-                  <div>
-                    <h3 className="font-semibold">Comptes Instagram Business ({facebookData.instagramAccounts?.length || 0})</h3>
-                    {facebookData.instagramAccounts?.length > 0 ? (
-                      <div className="grid gap-2">
-                        {facebookData.instagramAccounts.map((account: any) => (
-                          <div key={account.instagramBusinessAccountId} className="bg-gray-100 p-2 rounded">
-                            <p><strong>Compte Instagram:</strong> {account.instagramBusinessAccountId}</p>
-                            <p><strong>Associé à la page:</strong> {account.pageName}</p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-gray-500">Aucun compte Instagram Business trouvé</p>
-                    )}
-                  </div>
+                  {fbAuthStatus.instagramAccounts && (
+                    <div>
+                      <h3 className="font-semibold">Comptes Instagram Business ({fbAuthStatus.instagramAccounts.length || 0})</h3>
+                      {fbAuthStatus.instagramAccounts.length > 0 ? (
+                        <div className="grid gap-2">
+                          {fbAuthStatus.instagramAccounts.map((account: any) => (
+                            <div key={account.instagramBusinessAccountId} className="bg-gray-100 p-2 rounded">
+                              <p><strong>Compte Instagram:</strong> {account.instagramBusinessAccountId}</p>
+                              <p><strong>Associé à la page:</strong> {account.pageName}</p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-gray-500">Aucun compte Instagram Business trouvé</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
