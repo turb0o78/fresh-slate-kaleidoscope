@@ -23,8 +23,8 @@ export async function initiateFacebookAuth() {
   sessionStorage.setItem('meta_auth_state', state);
   sessionStorage.setItem('meta_auth_platform', 'facebook');
 
-  // URL d'autorisation
-  const redirectUri = `${window.location.origin}/dashboard/connections`;
+  // URL d'autorisation avec votre domaine
+  const redirectUri = `https://opaldesign.fr/dashboard/connections`;
   const scope = 'pages_show_list,pages_read_engagement,pages_manage_posts,instagram_basic,instagram_content_publish';
 
   const authUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&scope=${encodeURIComponent(scope)}&response_type=code`;
@@ -38,8 +38,8 @@ export async function initiateInstagramAuth() {
   sessionStorage.setItem('meta_auth_state', state);
   sessionStorage.setItem('meta_auth_platform', 'instagram');
 
-  // URL d'autorisation
-  const redirectUri = `${window.location.origin}/dashboard/connections`;
+  // URL d'autorisation avec votre domaine
+  const redirectUri = `https://opaldesign.fr/dashboard/connections`;
   const scope = 'instagram_basic,instagram_content_publish,pages_show_list,pages_read_engagement,pages_manage_posts';
 
   const authUrl = `https://api.instagram.com/oauth/authorize?client_id=${INSTAGRAM_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}&response_type=code&state=${state}`;
@@ -62,7 +62,7 @@ export async function handleMetaOAuthCallback(code: string, state: string, platf
       body: {
         code,
         platform,
-        redirect_uri: `${window.location.origin}/dashboard/connections`
+        redirect_uri: `https://opaldesign.fr/dashboard/connections`
       }
     });
 
