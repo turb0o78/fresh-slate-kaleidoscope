@@ -34,11 +34,5 @@ site_url = "http://localhost:3000"
 [analytics]
 enabled = false
 
-[experimental]
-pubsub = true
-metrics = false
-matrix = false
-tribes = false
-
 [functions.youtube-publish]
 verify_jwt = true
