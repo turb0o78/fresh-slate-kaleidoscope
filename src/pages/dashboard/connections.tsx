@@ -23,25 +23,18 @@ export function ConnectionsPage() {
   const [connectingPlatform, setConnectingPlatform] = useState<Platform | null>(null);
 
   useEffect(() => {
-    // Vérifier s'il y a un code d'autorisation sandbox stocké en session
-    const sandboxCode = sessionStorage.getItem('sandbox_code');
-    const sandboxState = sessionStorage.getItem('oauth_state');
+    console.log("ConnectionsPage mounted, checking for OAuth callbacks");
     
-    if (sandboxCode && sandboxState) {
-      console.log("Code sandbox TikTok détecté, traitement...");
-      sessionStorage.removeItem('sandbox_code');
-      handleCallback(sandboxCode, sandboxState, 'tiktok');
-      return;
-    }
-    
-    // Traitement des retours d'autorisation normaux
+    // Vérifier s'il y a un code d'autorisation TikTok stocké
     const code = searchParams.get('code');
     const state = searchParams.get('state');
-    const platform = sessionStorage.getItem('meta_auth_platform') || 
-                     sessionStorage.getItem('oauth_platform') as Platform | null;
+    const platform = sessionStorage.getItem('oauth_platform') as Platform | null;
 
     if (code && state && platform) {
-      handleCallback(code, state, platform as Platform);
+      console.log(`Code d'autorisation détecté pour la plateforme ${platform}`);
+      handleCallback(code, state, platform);
+    } else {
+      console.log("Aucun code d'autorisation détecté dans l'URL");
     }
   }, [searchParams]);
 
@@ -53,14 +46,25 @@ export function ConnectionsPage() {
 
   const handleCallback = async (code: string, state: string, platform: Platform) => {
     try {
+      console.log(`Traitement du rappel OAuth pour ${platform}`);
+      setError(null);
+      
       if (platform === 'facebook' || platform === 'instagram') {
         await handleMetaOAuthCallback(code, state, platform);
       } else {
         await handleOAuthCallback(code, state);
       }
+      
       await loadConnections();
       navigate('/dashboard/connections', { replace: true });
+      
+      // Afficher un message de succès
+      // toast({
+      //   title: "Connexion réussie",
+      //   description: `Votre compte ${platform} a été connecté avec succès.`,
+      // });
     } catch (err) {
+      console.error(`Erreur lors du traitement du callback ${platform}:`, err);
       setError(err instanceof Error ? err.message : 'Failed to connect account');
     } finally {
       setConnectingPlatform(null);
@@ -69,12 +73,16 @@ export function ConnectionsPage() {
 
   const loadConnections = async () => {
     try {
+      setLoading(true);
+      
       const { data, error } = await supabase
         .from('social_connections')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      
+      console.log("Connections chargées:", data?.length || 0);
       setConnections(data || []);
     } catch (error) {
       console.error('Error loading connections:', error);
@@ -86,10 +94,12 @@ export function ConnectionsPage() {
 
   const handleConnect = async (platform: Platform) => {
     try {
+      console.log(`Initialisation de la connexion ${platform}`);
       setError(null);
       setConnectingPlatform(platform);
       await initiateSocialAuth(platform);
     } catch (err) {
+      console.error(`Erreur lors de l'initialisation de la connexion ${platform}:`, err);
       setError(err instanceof Error ? err.message : 'Failed to initiate connection');
       setConnectingPlatform(null);
     }

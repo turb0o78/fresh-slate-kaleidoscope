@@ -30,7 +30,10 @@ enabled = true
 [auth]
 enabled = true
 site_url = "https://id-preview--cc3685fd-9c23-4caa-b619-780c74b89cd1.lovable.app"
-additional_redirect_urls = ["https://id-preview--cc3685fd-9c23-4caa-b619-780c74b89cd1.lovable.app/dashboard/connections"]
+additional_redirect_urls = [
+  "https://id-preview--cc3685fd-9c23-4caa-b619-780c74b89cd1.lovable.app/dashboard/connections",
+  "http://localhost:5173/dashboard/connections"
+]
 
 [analytics]
 enabled = false

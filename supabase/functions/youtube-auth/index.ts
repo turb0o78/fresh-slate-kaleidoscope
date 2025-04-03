@@ -21,8 +21,8 @@ serve(async (req) => {
 
   try {
     console.log("Traitement de l'authentification YouTube");
-    console.log("Client ID configuré:", !!YOUTUBE_CLIENT_ID);
-    console.log("Client Secret configuré:", !!YOUTUBE_CLIENT_SECRET);
+    console.log("Client ID:", YOUTUBE_CLIENT_ID ? "Configuré" : "Non configuré");
+    console.log("Client Secret:", YOUTUBE_CLIENT_SECRET ? "Configuré" : "Non configuré");
     console.log("URI de redirection:", REDIRECT_URI);
 
     // Récupérer le code d'autorisation et l'URI de redirection

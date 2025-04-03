@@ -1,7 +1,7 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Music, Plus, Trash2, Check, Loader2, AlertCircle } from 'lucide-react';
-import { initiateSocialAuth } from '../../lib/social-auth';
 import type { SocialConnection } from '../../lib/types';
 import { useToast } from '../../components/ui/toast';
 
@@ -17,7 +17,7 @@ export function TikTokButton({ connection, onConnect, onDisconnect, isLoading }:
   const [localLoading, setLocalLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const [clientKeyAvailable, setClientKeyAvailable] = useState<boolean>(true);
+  const [clientKeyAvailable, setClientKeyAvailable] = useState<boolean>(false);
   
   useEffect(() => {
     // Vérifier si les variables d'environnement TikTok sont disponibles
@@ -31,7 +31,7 @@ export function TikTokButton({ connection, onConnect, onDisconnect, isLoading }:
           setError("Clé d'API TikTok non configurée. Contactez l'administrateur.");
         } else {
           setClientKeyAvailable(true);
-          console.log("Configuration TikTok Sandbox détectée");
+          console.log("Configuration TikTok détectée:", tikTokClientId);
         }
       } catch (error) {
         console.error("Erreur lors de la vérification de la config TikTok:", error);
@@ -51,9 +51,9 @@ export function TikTokButton({ connection, onConnect, onDisconnect, isLoading }:
         throw new Error("Configuration TikTok manquante. Impossible de se connecter.");
       }
       
-      console.log("Tentative de connexion à TikTok avec l'API Sandbox...");
+      console.log("Tentative de connexion à TikTok...");
       
-      // Utiliser la fonction de connexion TikTok de social-auth.ts
+      // Utiliser la fonction de connexion TikTok
       await onConnect();
     } catch (error) {
       console.error("Erreur lors de l'initialisation de l'authentification TikTok:", error);
@@ -112,7 +112,7 @@ export function TikTokButton({ connection, onConnect, onDisconnect, isLoading }:
           <Button
             size="sm"
             onClick={handleConnect}
-            disabled={isLoading || localLoading}
+            disabled={isLoading || localLoading || !clientKeyAvailable}
             className="bg-black hover:bg-gray-800 text-white"
           >
             {(isLoading || localLoading) ? (
