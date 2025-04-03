@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Music, Plus, Trash2, Check, Loader2, AlertCircle } from 'lucide-react';
 import { initiateSocialAuth } from '../../lib/social-auth';
@@ -18,6 +18,28 @@ export function TikTokButton({ connection, onConnect, onDisconnect, isLoading }:
   const [localLoading, setLocalLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const [clientKeyAvailable, setClientKeyAvailable] = useState<boolean>(false);
+  
+  useEffect(() => {
+    // Vérifier si les variables d'environnement TikTok sont disponibles
+    const checkTikTokConfig = () => {
+      const hasClientKey = !!import.meta.env.VITE_TIKTOK_CLIENT_ID;
+      setClientKeyAvailable(hasClientKey);
+      
+      if (!hasClientKey) {
+        console.error("VITE_TIKTOK_CLIENT_ID n'est pas défini dans l'environnement");
+        setError("Clé d'application TikTok (client_key) non configurée");
+      } else {
+        console.log("Configuration TikTok détectée:", {
+          clientKeyAvailable: !!import.meta.env.VITE_TIKTOK_CLIENT_ID,
+          redirectUriAvailable: !!import.meta.env.VITE_TIKTOK_REDIRECT_URI
+        });
+        setError(null);
+      }
+    };
+    
+    checkTikTokConfig();
+  }, []);
   
   const handleConnect = async () => {
     try {
@@ -32,11 +54,13 @@ export function TikTokButton({ connection, onConnect, onDisconnect, isLoading }:
           description: "Clé d'application TikTok non configurée",
           type: "error"
         });
+        setLocalLoading(false);
         return;
       }
       
       console.log("Tentative de connexion à TikTok...");
       console.log("Client ID disponible:", !!import.meta.env.VITE_TIKTOK_CLIENT_ID);
+      console.log("Redirect URI:", import.meta.env.VITE_TIKTOK_REDIRECT_URI || "Non définie");
       
       // Utiliser la fonction de connexion TikTok de social-auth.ts
       await initiateSocialAuth('tiktok');
@@ -97,7 +121,7 @@ export function TikTokButton({ connection, onConnect, onDisconnect, isLoading }:
           <Button
             size="sm"
             onClick={handleConnect}
-            disabled={isLoading || localLoading}
+            disabled={isLoading || localLoading || !clientKeyAvailable}
             className="bg-black hover:bg-gray-800 text-white"
           >
             {(isLoading || localLoading) ? (

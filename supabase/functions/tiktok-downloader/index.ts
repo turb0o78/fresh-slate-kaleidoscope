@@ -2,13 +2,22 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'npm:@supabase/supabase-js@2.39.3';
 
+// Récupération des variables d'environnement
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const tiktokClientKey = Deno.env.get('TIKTOK_CLIENT_ID')!;
 const tiktokClientSecret = Deno.env.get('TIKTOK_CLIENT_SECRET')!;
 
+// Vérification et logging des variables d'environnement
 console.log("Function tiktok-downloader initialized");
+console.log("Supabase URL configured:", !!supabaseUrl);
+console.log("Supabase service key configured:", !!supabaseServiceKey);
 console.log("TikTok client key configured:", !!tiktokClientKey);
+console.log("TikTok client secret configured:", !!tiktokClientSecret);
+
+if (!tiktokClientKey) {
+  console.error("ATTENTION: TIKTOK_CLIENT_ID n'est pas configuré dans l'environnement Supabase");
+}
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
