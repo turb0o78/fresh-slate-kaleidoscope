@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { useAuth } from '../lib/auth';
 import { useFacebookAuth } from '../hooks/useFacebookAuth';
 import { FacebookStatusDisplay } from '../components/social/facebook-status-display';
+import { FacebookLoginButton } from '../components/social/facebook-login-button';
 import { Facebook, LogOut } from 'lucide-react';
 
 export function FacebookSDKDemoPage() {
@@ -43,16 +44,28 @@ export function FacebookSDKDemoPage() {
                 />
               </div>
 
-              <div className="flex space-x-4">
+              <div className="flex flex-col space-y-4">
                 {(!fbAuthStatus || fbAuthStatus.status !== 'connected') ? (
-                  <Button 
-                    onClick={handleLogin}
-                    disabled={isLoading}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    <Facebook className="h-4 w-4 mr-2" />
-                    Se connecter avec Facebook
-                  </Button>
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-sm font-medium mb-2">Option 1: Bouton de connexion personnalisé</h3>
+                      <Button 
+                        onClick={handleLogin}
+                        disabled={isLoading}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        <Facebook className="h-4 w-4 mr-2" />
+                        Se connecter avec Facebook
+                      </Button>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-sm font-medium mb-2">Option 2: Bouton de connexion natif Facebook</h3>
+                      <FacebookLoginButton 
+                        onConnected={(data) => console.log("Facebook connecté:", data)}
+                      />
+                    </div>
+                  </div>
                 ) : (
                   <Button 
                     onClick={handleLogout}
