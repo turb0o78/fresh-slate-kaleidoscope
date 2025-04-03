@@ -14,7 +14,7 @@ export const YOUTUBE_REDIRECT_URI = `${DOMAIN_URL}/dashboard/connections`;
 /* eslint-enable @typescript-eslint/no-unused-vars */
 
 // TikTok configuration
-export const TIKTOK_CLIENT_KEY = 'ksuvs9ejyt4bcv5mg';
+export const TIKTOK_CLIENT_KEY = 'sbawa90yd34c5s6msg';
 export const TIKTOK_REDIRECT_URI = `${DOMAIN_URL}/dashboard/connections`;
 /* eslint-disable @typescript-eslint/no-unused-vars */
 // Secrets conservés en commentaire pour référence uniquement, ne sont pas utilisés dans le code frontend
