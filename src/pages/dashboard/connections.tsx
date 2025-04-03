@@ -23,6 +23,18 @@ export function ConnectionsPage() {
   const [connectingPlatform, setConnectingPlatform] = useState<Platform | null>(null);
 
   useEffect(() => {
+    // Vérifier s'il y a un code d'autorisation sandbox stocké en session
+    const sandboxCode = sessionStorage.getItem('sandbox_code');
+    const sandboxState = sessionStorage.getItem('oauth_state');
+    
+    if (sandboxCode && sandboxState) {
+      console.log("Code sandbox TikTok détecté, traitement...");
+      sessionStorage.removeItem('sandbox_code');
+      handleCallback(sandboxCode, sandboxState, 'tiktok');
+      return;
+    }
+    
+    // Traitement des retours d'autorisation normaux
     const code = searchParams.get('code');
     const state = searchParams.get('state');
     const platform = sessionStorage.getItem('meta_auth_platform') || 

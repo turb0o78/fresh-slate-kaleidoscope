@@ -18,26 +18,17 @@ export function TikTokButton({ connection, onConnect, onDisconnect, isLoading }:
   const [localLoading, setLocalLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const [clientKeyAvailable, setClientKeyAvailable] = useState<boolean>(true); // Changé à true pour permettre le clic
+  const [clientKeyAvailable, setClientKeyAvailable] = useState<boolean>(true); // Toujours true en mode sandbox
   
   useEffect(() => {
     // Vérifier si les variables d'environnement TikTok sont disponibles
     const checkTikTokConfig = () => {
-      const hasClientKey = !!import.meta.env.VITE_TIKTOK_CLIENT_ID;
-      
       // En mode sandbox, nous permettons l'utilisation même sans configuration complète
       setClientKeyAvailable(true);
       
-      if (!hasClientKey) {
-        console.warn("VITE_TIKTOK_CLIENT_ID n'est pas défini dans l'environnement mais continuera en mode sandbox");
-        setError("Mode TikTok Sandbox actif - Configuration incomplète mais fonctionnelle");
-      } else {
-        console.log("Configuration TikTok détectée:", {
-          clientKeyAvailable: !!import.meta.env.VITE_TIKTOK_CLIENT_ID,
-          redirectUriAvailable: !!import.meta.env.VITE_TIKTOK_REDIRECT_URI
-        });
-        setError(null);
-      }
+      // Indiquer clairement le mode sandbox
+      console.log("Mode TikTok Sandbox actif");
+      setError("Mode TikTok Sandbox actif - Utilisation de valeurs simulées");
     };
     
     checkTikTokConfig();
@@ -50,11 +41,9 @@ export function TikTokButton({ connection, onConnect, onDisconnect, isLoading }:
       
       // En mode sandbox, nous continuons même sans clé configurée
       console.log("Tentative de connexion à TikTok en mode Sandbox...");
-      console.log("Client ID disponible:", !!import.meta.env.VITE_TIKTOK_CLIENT_ID);
-      console.log("Redirect URI:", import.meta.env.VITE_TIKTOK_REDIRECT_URI || "Non définie mais fonctionnera en sandbox");
       
       // Utiliser la fonction de connexion TikTok de social-auth.ts
-      await initiateSocialAuth('tiktok');
+      await onConnect();
     } catch (error) {
       console.error("Erreur lors de l'initialisation de l'authentification TikTok:", error);
       setError(error instanceof Error ? error.message : "Erreur inconnue");

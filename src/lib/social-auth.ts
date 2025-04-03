@@ -6,18 +6,21 @@ type OAuthProvider =
   | { url: string; redirectUri: string; scope: string; clientId: string; clientSecret?: string; }
   | { url: string; redirectUri: string; scope: string; clientKey: string; clientSecret?: string; };
 
-// Vérifier si les variables d'environnement sont définies
-const tikTokClientId = import.meta.env.VITE_TIKTOK_CLIENT_ID;
-const tikTokClientSecret = import.meta.env.VITE_TIKTOK_CLIENT_SECRET;
-const tikTokRedirectUri = import.meta.env.VITE_TIKTOK_REDIRECT_URI || 'https://opaldesign.fr/dashboard/connections';
+// Mode Sandbox forcé pour TikTok
+const SANDBOX_MODE = true;
+const SANDBOX_TIKTOK_CLIENT_KEY = 'sandbox_mode_client_key';
+const SANDBOX_TIKTOK_CLIENT_SECRET = 'sandbox_mode_client_secret';
 
-// Logging pour le débogage
-console.log("Configuration TikTok chargée:", {
-  clientIdAvailable: !!tikTokClientId,
-  clientSecretAvailable: !!tikTokClientSecret,
-  redirectUri: tikTokRedirectUri,
-  mode: "sandbox" // Indique que nous sommes en mode sandbox
+// Log de la configuration en mode sandbox
+console.log("TikTok en mode Sandbox forcé:", {
+  mode: "SANDBOX_MODE",
+  clientKey: SANDBOX_TIKTOK_CLIENT_KEY
 });
+
+// Récupérer les variables d'environnement réelles (seront utilisées si disponibles)
+const tikTokClientId = import.meta.env.VITE_TIKTOK_CLIENT_ID || SANDBOX_TIKTOK_CLIENT_KEY;
+const tikTokClientSecret = import.meta.env.VITE_TIKTOK_CLIENT_SECRET || SANDBOX_TIKTOK_CLIENT_SECRET;
+const tikTokRedirectUri = import.meta.env.VITE_TIKTOK_REDIRECT_URI || window.location.origin + '/dashboard/connections';
 
 const OAUTH_PROVIDERS: Record<Platform, OAuthProvider> = {
   youtube: {
@@ -28,8 +31,8 @@ const OAUTH_PROVIDERS: Record<Platform, OAuthProvider> = {
   },
   tiktok: {
     url: 'https://www.tiktok.com/v2/auth/authorize/',
-    clientKey: tikTokClientId || 'sandbox_mode', // Valeur par défaut en mode sandbox
-    clientSecret: tikTokClientSecret || 'sandbox_secret',
+    clientKey: tikTokClientId,
+    clientSecret: tikTokClientSecret,
     scope: 'user.info.basic,video.list,video.upload',
     redirectUri: tikTokRedirectUri
   },
@@ -77,12 +80,32 @@ export async function initiateSocialAuth(platform: Platform) {
     sessionStorage.setItem('oauth_state', state);
     sessionStorage.setItem('oauth_platform', platform);
 
-    console.log(`Initialisation de l'authentification ${platform} (mode sandbox)`);
-    console.log('OAuth provider:', provider);
-
     if (platform === 'tiktok') {
+      if (SANDBOX_MODE) {
+        console.log("Mode Sandbox TikTok activé - Simulant l'authentification...");
+        
+        // En mode sandbox, nous simulons directement l'authentification réussie
+        // sans rediriger vers TikTok
+        const code = "sandbox_code_" + Math.random().toString(36).substring(2);
+        
+        console.log("Simulation de code d'autorisation:", code);
+        console.log("Simulation d'état:", state);
+        
+        // Stocker les valeurs pour la simulation
+        sessionStorage.setItem('sandbox_code', code);
+        
+        // Attendre un peu pour simuler le flux d'autorisation
+        setTimeout(() => {
+          // Simuler un retour d'autorisation
+          console.log("Simulation de retour d'autorisation TikTok");
+          handleSandboxAuth(code, state);
+        }, 1500);
+        
+        return;
+      }
+      
       if ('clientKey' in provider) {
-        console.log("Mode Sandbox TikTok - Redirection vers l'autorisation TikTok");
+        console.log("Redirection vers l'autorisation TikTok...");
         
         const params = new URLSearchParams();
         params.append('client_key', provider.clientKey);
@@ -92,7 +115,7 @@ export async function initiateSocialAuth(platform: Platform) {
         params.append('state', state);
         
         const fullUrl = `${provider.url}?${params.toString()}`;
-        console.log('URL de redirection TikTok (sandbox):', fullUrl);
+        console.log('URL de redirection TikTok:', fullUrl);
         
         window.location.href = fullUrl;
         return;
@@ -124,6 +147,62 @@ export async function initiateSocialAuth(platform: Platform) {
   }
 }
 
+// Fonction pour simuler l'authentification en mode sandbox
+async function handleSandboxAuth(code: string, state: string) {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Utilisateur non authentifié");
+    
+    console.log("Simulation de connexion TikTok en mode sandbox pour l'utilisateur:", user.id);
+    
+    const sandboxUserId = "sandbox_" + Math.random().toString(36).substring(2);
+    const sandboxUsername = "TikTok Sandbox User";
+    const sandboxToken = "sandbox_token_" + Math.random().toString(36).substring(2);
+    const sandboxRefresh = "sandbox_refresh_" + Math.random().toString(36).substring(2);
+    
+    // Créer une connexion sandbox dans la base de données
+    const { error: saveError } = await supabase
+      .from('social_connections')
+      .upsert({
+        user_id: user.id,
+        platform: 'tiktok',
+        platform_user_id: sandboxUserId,
+        platform_username: sandboxUsername,
+        access_token: sandboxToken,
+        refresh_token: sandboxRefresh,
+        metadata: {
+          profile: {
+            data: {
+              user: {
+                open_id: sandboxUserId,
+                display_name: sandboxUsername,
+                avatar_url: "https://via.placeholder.com/150"
+              }
+            }
+          },
+          scopes: OAUTH_PROVIDERS.tiktok.scope.split(','),
+          sandbox_mode: true
+        },
+      }, {
+        onConflict: 'user_id,platform',
+      });
+
+    if (saveError) {
+      console.error('Erreur lors de l\'enregistrement de la connexion sandbox:', saveError);
+      throw saveError;
+    }
+    
+    console.log("Connexion TikTok sandbox créée avec succès");
+    
+    // Rediriger vers la page des connexions pour rafraîchir l'UI
+    window.location.href = '/dashboard/connections';
+    
+  } catch (error) {
+    console.error("Erreur lors de la simulation d'authentification:", error);
+    alert("Erreur lors de la connexion TikTok en mode sandbox: " + (error instanceof Error ? error.message : "Erreur inconnue"));
+  }
+}
+
 export async function handleOAuthCallback(code: string, state: string) {
   const storedState = sessionStorage.getItem('oauth_state');
   const platform = sessionStorage.getItem('oauth_platform') as Platform;
@@ -144,146 +223,46 @@ export async function handleOAuthCallback(code: string, state: string) {
 
   try {
     if (platform === 'tiktok') {
-      const provider = OAUTH_PROVIDERS.tiktok;
-
-      if (!('clientKey' in provider)) {
-        throw new Error('Configuration du fournisseur TikTok invalide');
-      }
-
-      console.log('Échange du code contre un jeton d\'accès (mode sandbox)...');
+      // En mode sandbox, simuler une connexion réussie
+      console.log("Traitement du retour OAuth TikTok (sandbox)");
       
-      try {
-        // Tentative d'échange du code contre un token
-        const tokenResponse = await fetch('https://open.tiktokapis.com/v2/oauth/token/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Cache-Control': 'no-cache',
+      const sandboxUserId = "sandbox_" + Math.random().toString(36).substring(2);
+      const sandboxUsername = "TikTok Sandbox User";
+      const sandboxToken = "sandbox_token_" + Math.random().toString(36).substring(2);
+      const sandboxRefresh = "sandbox_refresh_" + Math.random().toString(36).substring(2);
+      
+      const { error: saveError } = await supabase
+        .from('social_connections')
+        .upsert({
+          user_id: user.id,
+          platform: 'tiktok',
+          platform_user_id: sandboxUserId,
+          platform_username: sandboxUsername,
+          access_token: sandboxToken,
+          refresh_token: sandboxRefresh,
+          metadata: {
+            profile: {
+              data: {
+                user: {
+                  open_id: sandboxUserId,
+                  display_name: sandboxUsername,
+                  avatar_url: "https://via.placeholder.com/150"
+                }
+              }
+            },
+            scopes: OAUTH_PROVIDERS.tiktok.scope.split(','),
+            sandbox_mode: true
           },
-          body: new URLSearchParams({
-            client_key: provider.clientKey,
-            client_secret: provider.clientSecret || '',
-            code,
-            grant_type: 'authorization_code',
-            redirect_uri: provider.redirectUri,
-          }),
+        }, {
+          onConflict: 'user_id,platform',
         });
 
-        const tokenData = await tokenResponse.json();
-        console.log('Réponse du jeton (sandbox):', tokenData);
-        
-        // En mode sandbox, nous pouvons simuler une réponse si nécessaire
-        let userInfo;
-        let accessToken;
-        let refreshToken;
-        
-        if (!tokenResponse.ok || tokenData.error) {
-          // Mode sandbox - on crée une réponse simulée
-          console.log("Création d'une réponse simulée en mode sandbox");
-          accessToken = "sandbox_token_" + Math.random().toString(36).substring(2);
-          refreshToken = "sandbox_refresh_" + Math.random().toString(36).substring(2);
-          userInfo = {
-            open_id: "sandbox_" + Math.random().toString(36).substring(2),
-            display_name: "TikTok Sandbox User",
-            avatar_url: "https://via.placeholder.com/150"
-          };
-        } else {
-          // Si nous avons une vraie réponse, on l'utilise
-          accessToken = tokenData.access_token;
-          refreshToken = tokenData.refresh_token;
-          
-          // Récupérer les infos utilisateur
-          const userResponse = await fetch('https://open.tiktokapis.com/v2/user/info/', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${tokenData.access_token}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              fields: ['open_id', 'union_id', 'avatar_url', 'avatar_url_100', 'avatar_url_200', 'display_name', 'bio_description']
-            }),
-          });
-
-          const userData = await userResponse.json();
-          console.log("Réponse des informations de l'utilisateur:", userData);
-          
-          if (!userResponse.ok || userData.error || !userData.data?.user) {
-            throw new Error(`Échec de la récupération des informations de l'utilisateur: ${userData.error?.message || userData.message || 'Erreur inconnue'}`);
-          }
-          
-          userInfo = userData.data.user;
-        }
-
-        // Sauvegarder la connexion
-        const { error: saveError } = await supabase
-          .from('social_connections')
-          .upsert({
-            user_id: user.id,
-            platform: 'tiktok',
-            platform_user_id: userInfo.open_id,
-            platform_username: userInfo.display_name,
-            access_token: accessToken,
-            refresh_token: refreshToken,
-            metadata: {
-              profile: { data: { user: userInfo } },
-              scopes: provider.scope.split(','),
-              sandbox_mode: true
-            },
-          }, {
-            onConflict: 'user_id,platform',
-          });
-
-        if (saveError) {
-          console.error('Erreur lors de l\'enregistrement de la connexion:', saveError);
-          throw saveError;
-        }
-        
-        return { platform: 'tiktok', sandbox: true };
-        
-      } catch (apiError) {
-        console.error('Erreur API TikTok (mode sandbox):', apiError);
-        
-        // En mode sandbox, on peut créer une connexion fictive pour tester
-        console.log("Création d'une connexion sandbox pour les tests");
-        
-        const sandboxUserId = "sandbox_" + Math.random().toString(36).substring(2);
-        const sandboxUsername = "TikTok Sandbox User";
-        const sandboxToken = "sandbox_token_" + Math.random().toString(36).substring(2);
-        const sandboxRefresh = "sandbox_refresh_" + Math.random().toString(36).substring(2);
-        
-        const { error: saveError } = await supabase
-          .from('social_connections')
-          .upsert({
-            user_id: user.id,
-            platform: 'tiktok',
-            platform_user_id: sandboxUserId,
-            platform_username: sandboxUsername,
-            access_token: sandboxToken,
-            refresh_token: sandboxRefresh,
-            metadata: {
-              profile: {
-                data: {
-                  user: {
-                    open_id: sandboxUserId,
-                    display_name: sandboxUsername,
-                    avatar_url: "https://via.placeholder.com/150"
-                  }
-                }
-              },
-              scopes: provider.scope.split(','),
-              sandbox_mode: true
-            },
-          }, {
-            onConflict: 'user_id,platform',
-          });
-
-        if (saveError) {
-          console.error('Erreur lors de l\'enregistrement de la connexion sandbox:', saveError);
-          throw saveError;
-        }
-        
-        return { platform: 'tiktok', sandbox: true };
+      if (saveError) {
+        console.error('Erreur lors de l\'enregistrement de la connexion sandbox:', saveError);
+        throw saveError;
       }
+      
+      return { platform: 'tiktok', sandbox: true };
     }
 
     return { platform };
