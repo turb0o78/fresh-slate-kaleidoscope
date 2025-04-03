@@ -12,6 +12,8 @@ export async function handleTikTokCallback(
   const token = "sandbox_token_" + Math.random().toString(36).substring(2);
   const refresh = "sandbox_refresh_" + Math.random().toString(36).substring(2);
   
+  console.log("TikTok utilisant le mode sandbox avec l'utilisateur ID:", sandboxUserId);
+  
   // Sauvegarder les informations dans la base de données
   const { error: saveError } = await supabase
     .from('social_connections')
@@ -31,8 +33,10 @@ export async function handleTikTokCallback(
     });
     
   if (saveError) {
+    console.error("Erreur lors de l'enregistrement de la connexion TikTok:", saveError);
     throw saveError;
   }
   
+  console.log("Connexion TikTok sauvegardée avec succès en mode sandbox");
   return { platform: 'tiktok', success: true, sandbox: true };
 }

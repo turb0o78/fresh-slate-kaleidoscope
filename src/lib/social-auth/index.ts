@@ -50,7 +50,7 @@ export async function initiateSocialAuth(platform: Platform) {
     // Gestion pour TikTok
     else if (platform === 'tiktok') {
       console.log("Redirection vers l'autorisation TikTok...");
-      console.log("Client Key:", provider.clientId.substring(0, 5) + '...');
+      console.log("Client Key:", provider.clientId);
       console.log("Redirect URI:", provider.redirectUri);
       
       const params = new URLSearchParams();
