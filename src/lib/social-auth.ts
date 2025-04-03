@@ -1,3 +1,4 @@
+
 import { supabase } from './supabase';
 import type { Platform } from './types';
 
@@ -13,11 +14,13 @@ type OAuthProvider = {
 // Clés d'API directement dans le code pour garantir leur disponibilité
 // Ces valeurs seront utilisées si les variables d'environnement ne sont pas disponibles
 const YOUTUBE_CLIENT_ID = '716459993916-dtfg52nflg5jdrna5vtg2h4ahupvt7bs.apps.googleusercontent.com';
-const _YOUTUBE_CLIENT_SECRET = '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';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _YOUTUBE_CLIENT_SECRET = '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'; // Non utilisé mais conservé pour référence
 
 // Pour TikTok, nous utiliserons un mode sandbox si les clés ne sont pas disponibles
 const TIKTOK_CLIENT_KEY = 'awnny4j78qpvbt87';
-const _TIKTOK_CLIENT_SECRET = 'a76161b9f85de465ae8a824458d9c4f8569c24a0';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _TIKTOK_CLIENT_SECRET = 'a76161b9f85de465ae8a824458d9c4f8569c24a0'; // Non utilisé mais conservé pour référence
 
 // Utiliser l'URL actuelle du domaine pour les redirections
 const DOMAIN_URL = window.location.origin;

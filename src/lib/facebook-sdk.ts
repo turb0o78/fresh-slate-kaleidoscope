@@ -31,9 +31,13 @@ declare global {
       login: (callback: (response: FacebookLoginStatus) => void, options?: FacebookLoginOptions) => void;
       logout: (callback: (response: any) => void) => void;
       getLoginStatus: (callback: (response: FacebookLoginStatus) => void) => void;
-      // Correction de la définition dupliquée de api
-      api: ((path: string, callback: (response: any) => void) => void) & 
-           ((path: string, method: string, params: any, callback: (response: any) => void) => void);
+      // Correction de la définition de api pour supporter différentes signatures
+      api: {
+        (path: string, callback: (response: any) => void): void;
+        (path: string, method: string, callback: (response: any) => void): void;
+        (path: string, params: object, callback: (response: any) => void): void;
+        (path: string, method: string, params: object, callback: (response: any) => void): void;
+      };
       // Ajout de XFBML pour la partie rendu des boutons
       XFBML: {
         parse: (element?: HTMLElement) => void;
@@ -111,8 +115,8 @@ export const getUserInfo = (): Promise<any> => {
       return;
     }
 
-    // Correction du nombre d'arguments
-    window.FB.api('/me', { fields: 'id,name,email' }, (response: any) => {
+    // Correction: utilisation de 2 arguments (path + callback) ou 4 arguments (path + method + params + callback)
+    window.FB.api('/me', (response: any) => {
       if (response && !response.error) {
         resolve(response);
       } else {
@@ -132,8 +136,8 @@ export const getUserPages = (): Promise<any[]> => {
       return;
     }
 
-    // Correction du nombre d'arguments
-    window.FB.api('/me/accounts', { fields: 'id,name,access_token,category,instagram_business_account' }, (response: any) => {
+    // Correction: utilisation de la signature correcte avec 4 arguments
+    window.FB.api('/me/accounts', 'get', { fields: 'id,name,access_token,category,instagram_business_account' }, (response: any) => {
       if (response && !response.error) {
         resolve(response.data || []);
       } else {
