@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Button } from '../ui/button';
 import { Music, Plus, Trash2, Check, Loader2 } from 'lucide-react';
+import { initiateSocialAuth } from '../../lib/social-auth';
 import type { SocialConnection } from '../../lib/types';
 
 interface TikTokButtonProps {
@@ -13,6 +14,20 @@ interface TikTokButtonProps {
 
 export function TikTokButton({ connection, onConnect, onDisconnect, isLoading }: TikTokButtonProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [localLoading, setLocalLoading] = useState(false);
+  
+  const handleConnect = async () => {
+    try {
+      setLocalLoading(true);
+      // Utilisons la fonction de connexion TikTok de social-auth.ts
+      await initiateSocialAuth('tiktok');
+    } catch (error) {
+      console.error("Erreur lors de l'initialisation de l'authentification TikTok:", error);
+    } finally {
+      // Le chargement sera réinitialisé lorsque l'utilisateur reviendra du flux d'autorisation
+      setLocalLoading(false);
+    }
+  };
 
   return (
     <div className={`bg-white p-6 rounded-xl shadow-sm border border-secondary-100 transition-all duration-300 ${connection ? 'hover:border-primary-100' : ''}`}
@@ -56,11 +71,11 @@ export function TikTokButton({ connection, onConnect, onDisconnect, isLoading }:
         ) : (
           <Button
             size="sm"
-            onClick={onConnect}
-            disabled={isLoading}
+            onClick={handleConnect}
+            disabled={isLoading || localLoading}
             className="bg-black hover:bg-gray-800 text-white"
           >
-            {isLoading ? (
+            {(isLoading || localLoading) ? (
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
             ) : (
               <Plus className="h-4 w-4 mr-2" />
