@@ -6,7 +6,7 @@ import { TikTokButton } from '../../components/social/tiktok-button';
 import { YouTubeButton } from '../../components/social/youtube-button';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../lib/auth';
-import { initiateSocialAuth, handleOAuthCallback } from '../../lib/social-auth';
+import { initiateSocialAuth, handleOAuthCallback } from '../../lib/social-auth'; // Import from new location
 import { handleMetaOAuthCallback } from '../../lib/meta-auth';
 import { FacebookConnection } from '../../components/social/facebook-connection';
 import { InstagramConnection } from '../../components/social/instagram-connection';
