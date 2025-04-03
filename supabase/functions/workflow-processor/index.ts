@@ -98,6 +98,10 @@ serve(async (req) => {
           // Pour Instagram et Facebook, les métadonnées contiennent déjà les informations nécessaires
           sourceContent = item.metadata?.caption || item.metadata?.message || "";
           sourceMedia = item.metadata?.media_url || "";
+        } else if (item.source_platform === 'youtube') {
+          // Pour YouTube, récupérer les détails de la vidéo
+          sourceContent = item.metadata?.title || item.metadata?.description || "";
+          sourceMedia = item.metadata?.media_url || "";
         }
         
         // Pour chaque plateforme cible, publier le contenu
@@ -113,12 +117,17 @@ serve(async (req) => {
                 sourceMedia, 
                 sourceContent
               );
+            } else if (targetPlatform === 'youtube') {
+              // Publier sur YouTube
+              result = await republishToYouTube(
+                supabase,
+                workflow.user_id,
+                sourceMedia,
+                sourceContent
+              );
             } else if (targetPlatform === 'tiktok') {
               // Publier sur TikTok (à implémenter)
               result = { success: false, error: "Publication sur TikTok non implémentée" };
-            } else if (targetPlatform === 'youtube') {
-              // Publier sur YouTube (à implémenter)
-              result = { success: false, error: "Publication sur YouTube non implémentée" };
             }
             
             results.push({
@@ -239,6 +248,53 @@ async function republishToMeta(
     return data;
   } catch (error) {
     console.error(`Error republishing to ${platform}:`, error);
+    throw error;
+  }
+}
+
+async function republishToYouTube(
+  supabase: any,
+  userId: string,
+  mediaUrl?: string,
+  caption?: string
+) {
+  try {
+    // Récupérer la connexion YouTube
+    const { data: connection, error: connectionError } = await supabase
+      .from('social_connections')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('platform', 'youtube')
+      .single();
+    
+    if (connectionError || !connection) {
+      throw connectionError || new Error("YouTube connection not found");
+    }
+    
+    // Déterminer si en mode sandbox
+    const sandboxMode = connection.metadata?.sandbox_mode === true;
+    
+    // Préparer les métadonnées de la vidéo
+    const title = caption?.split('\n')[0] || "Vidéo partagée";
+    const description = caption || "Vidéo partagée via l'application";
+    
+    // Appeler la fonction de publication YouTube
+    const { data, error } = await supabase.functions.invoke('youtube-publish', {
+      body: {
+        mediaUrl,
+        title,
+        description,
+        connectionId: connection.platform_user_id,
+        sandboxMode
+      }
+    });
+    
+    if (error) throw error;
+    if (!data) throw new Error("Aucune donnée reçue de la fonction de publication YouTube");
+    
+    return data;
+  } catch (error) {
+    console.error("Error republishing to YouTube:", error);
     throw error;
   }
 }

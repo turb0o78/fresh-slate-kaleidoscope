@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '../ui/button';
 import { Youtube, Plus, Trash2 } from 'lucide-react';
@@ -12,6 +13,9 @@ interface YouTubeButtonProps {
 
 export function YouTubeButton({ connection, onConnect, onDisconnect, isLoading }: YouTubeButtonProps) {
   const [isHovered, setIsHovered] = useState(false);
+  
+  // Déterminer si le compte est en mode sandbox
+  const isSandboxMode = connection?.metadata?.sandbox_mode === true;
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm">
@@ -24,7 +28,8 @@ export function YouTubeButton({ connection, onConnect, onDisconnect, isLoading }
             <h3 className="font-medium">YouTube</h3>
             {connection && (
               <p className="text-sm text-gray-500">
-                Connected as {connection.platform_username}
+                Connecté en tant que {connection.platform_username}
+                {isSandboxMode && <span className="ml-2 px-1.5 py-0.5 bg-amber-100 text-amber-800 text-xs rounded">Sandbox</span>}
               </p>
             )}
           </div>
@@ -59,7 +64,7 @@ export function YouTubeButton({ connection, onConnect, onDisconnect, isLoading }
         <div className="flex items-center space-x-2">
           <div className="h-2 w-2 rounded-full bg-green-500" />
           <span className="text-sm text-gray-500">
-            Connected {new Date(connection.created_at).toLocaleDateString()}
+            Connecté le {new Date(connection.created_at).toLocaleDateString()}
           </span>
         </div>
       )}

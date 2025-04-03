@@ -1,32 +1,44 @@
 
-# This file controls the behavior of Supabase Edge Functions.
-
 project_id = "ngkbxqkdgqisjkbzpdyu"
 
-[functions]
-[functions.meta-auth]
-verify_jwt = true
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
 
-[functions.meta-publish]
-verify_jwt = true
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
 
-[functions.meta-webhook]
-verify_jwt = false
+[studio]
+enabled = true
+port = 54323
+api_url = "http://localhost"
 
-[functions.stripe-webhook]
-verify_jwt = false
+[inbucket]
+enabled = true
+port = 54324
+smtp_port = 54325
+pop3_port = 54326
 
-[functions.tiktok-downloader]
-verify_jwt = true
+[storage]
+enabled = true
 
-[functions.tiktok-video-cleanup]
-verify_jwt = true
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
 
-[functions.tiktok-webhook]
-verify_jwt = false
+[analytics]
+enabled = false
 
-[functions.webhook-handler]
-verify_jwt = false
+[experimental]
+pubsub = true
+metrics = false
+matrix = false
+tribes = false
 
-[functions.workflow-processor]
+[functions.youtube-publish]
 verify_jwt = true
