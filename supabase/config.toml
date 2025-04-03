@@ -36,3 +36,6 @@ enabled = false
 
 [functions.youtube-publish]
 verify_jwt = true
+
+[functions.youtube-auth]
+verify_jwt = true

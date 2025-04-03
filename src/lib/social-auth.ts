@@ -5,35 +5,17 @@ type OAuthProvider =
   | { url: string; redirectUri: string; scope: string; clientId: string; clientSecret?: string; }
   | { url: string; redirectUri: string; scope: string; clientKey: string; clientSecret?: string; };
 
-// Mode Sandbox forcé pour TikTok et YouTube
-const SANDBOX_MODE = true;
+// Configuration du mode sandbox uniquement pour TikTok
+const TIKTOK_SANDBOX_MODE = true;
+const YOUTUBE_SANDBOX_MODE = false;
 
-// Configuration TikTok en mode sandbox
-const SANDBOX_TIKTOK_CLIENT_KEY = 'sandbox_mode_client_key';
-const SANDBOX_TIKTOK_CLIENT_SECRET = 'sandbox_mode_client_secret';
-
-// Configuration YouTube en mode sandbox
-const SANDBOX_YOUTUBE_CLIENT_ID = 'sandbox_youtube_client_id';
-const SANDBOX_YOUTUBE_CLIENT_SECRET = 'sandbox_youtube_client_secret';
-
-// Log de la configuration en mode sandbox
-console.log("Mode Sandbox forcé:", {
-  mode: "SANDBOX_MODE",
-  tiktok: {
-    clientKey: SANDBOX_TIKTOK_CLIENT_KEY
-  },
-  youtube: {
-    clientId: SANDBOX_YOUTUBE_CLIENT_ID
-  }
-});
-
-// Récupérer les variables d'environnement réelles (seront utilisées si disponibles)
-const tikTokClientId = import.meta.env.VITE_TIKTOK_CLIENT_ID || SANDBOX_TIKTOK_CLIENT_KEY;
-const tikTokClientSecret = import.meta.env.VITE_TIKTOK_CLIENT_SECRET || SANDBOX_TIKTOK_CLIENT_SECRET;
+// Récupérer les variables d'environnement
+const tikTokClientId = import.meta.env.VITE_TIKTOK_CLIENT_ID;
+const tikTokClientSecret = import.meta.env.VITE_TIKTOK_CLIENT_SECRET;
 const tikTokRedirectUri = import.meta.env.VITE_TIKTOK_REDIRECT_URI || window.location.origin + '/dashboard/connections';
 
 // Variables YouTube
-const youtubeClientId = import.meta.env.VITE_YOUTUBE_CLIENT_ID || SANDBOX_YOUTUBE_CLIENT_ID;
+const youtubeClientId = import.meta.env.VITE_YOUTUBE_CLIENT_ID;
 const youtubeRedirectUri = import.meta.env.VITE_YOUTUBE_REDIRECT_URI || window.location.origin + '/dashboard/connections';
 
 const OAUTH_PROVIDERS: Record<Platform, OAuthProvider> = {
@@ -96,7 +78,7 @@ export async function initiateSocialAuth(platform: Platform) {
 
     // Gestion spéciale pour TikTok
     if (platform === 'tiktok') {
-      if (SANDBOX_MODE) {
+      if (TIKTOK_SANDBOX_MODE) {
         console.log("Mode Sandbox TikTok activé - Simulant l'authentification...");
         simulateSandboxAuth(platform, state);
         return;
@@ -123,7 +105,7 @@ export async function initiateSocialAuth(platform: Platform) {
     } 
     // Gestion pour YouTube
     else if (platform === 'youtube') {
-      if (SANDBOX_MODE) {
+      if (YOUTUBE_SANDBOX_MODE) {
         console.log("Mode Sandbox YouTube activé - Simulant l'authentification...");
         simulateSandboxAuth(platform, state);
         return;
@@ -366,9 +348,9 @@ export async function handleOAuthCallback(code: string, state: string) {
   if (!user) throw new Error("Utilisateur non authentifié");
 
   try {
-    if (SANDBOX_MODE && (platform === 'tiktok' || platform === 'youtube')) {
-      // En mode sandbox, simuler une connexion réussie
-      console.log(`Traitement du retour OAuth ${platform} (sandbox)`);
+    // Gérer l'authentification TikTok en mode sandbox
+    if (TIKTOK_SANDBOX_MODE && platform === 'tiktok') {
+      console.log(`Traitement du retour OAuth TikTok (sandbox)`);
       
       const platformData = getPlatformSandboxData(platform);
       
@@ -377,7 +359,7 @@ export async function handleOAuthCallback(code: string, state: string) {
         .upsert({
           user_id: user.id,
           platform: platform,
-          platform_user_id: `sandbox_${platform}_id`,
+          platform_user_id: `sandbox_tiktok_id`,
           platform_username: platformData.username,
           access_token: platformData.token,
           refresh_token: platformData.refresh,
@@ -387,14 +369,61 @@ export async function handleOAuthCallback(code: string, state: string) {
         });
 
       if (saveError) {
-        console.error(`Erreur lors de l'enregistrement de la connexion sandbox ${platform}:`, saveError);
+        console.error(`Erreur lors de l'enregistrement de la connexion sandbox TikTok:`, saveError);
         throw saveError;
       }
       
       return { platform: platform, sandbox: true };
     }
-
-    return { platform };
+    // Gérer l'authentification YouTube en mode réel
+    else if (platform === 'youtube' && !YOUTUBE_SANDBOX_MODE) {
+      console.log("Traitement du retour OAuth YouTube (mode réel)");
+      
+      // Échanger le code contre un token d'accès via le backend
+      const response = await fetch(`${supabase.functions.url}/youtube-auth`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user.id}`
+        },
+        body: JSON.stringify({ code, redirect_uri: OAUTH_PROVIDERS.youtube.redirectUri })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(`Erreur d'authentification YouTube: ${error.message || response.statusText}`);
+      }
+      
+      const authData = await response.json();
+      
+      // Sauvegarder les informations dans la base de données
+      const { error: saveError } = await supabase
+        .from('social_connections')
+        .upsert({
+          user_id: user.id,
+          platform: 'youtube',
+          platform_user_id: authData.channel_id,
+          platform_username: authData.channel_name,
+          access_token: authData.access_token,
+          refresh_token: authData.refresh_token,
+          metadata: {
+            profile: authData.profile,
+            scopes: authData.scopes
+          }
+        }, {
+          onConflict: 'user_id,platform'
+        });
+        
+      if (saveError) {
+        throw saveError;
+      }
+      
+      return { platform: 'youtube', success: true };
+    } 
+    // Gérer les autres plateformes (code existant)
+    else {
+      return { platform };
+    }
   } catch (error) {
     console.error('Erreur durant le rappel OAuth:', error);
     throw error;
