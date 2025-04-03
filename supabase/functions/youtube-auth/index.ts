@@ -5,7 +5,7 @@ import { google } from "npm:googleapis@126.0.1";
 // Récupération des variables d'environnement
 const YOUTUBE_CLIENT_ID = Deno.env.get('YOUTUBE_CLIENT_ID') || '';
 const YOUTUBE_CLIENT_SECRET = Deno.env.get('YOUTUBE_CLIENT_SECRET') || '';
-const REDIRECT_URI = Deno.env.get('VITE_YOUTUBE_REDIRECT_URI') || 'http://localhost:3000/dashboard/connections';
+const REDIRECT_URI = Deno.env.get('VITE_YOUTUBE_REDIRECT_URI') || 'https://id-preview--cc3685fd-9c23-4caa-b619-780c74b89cd1.lovable.app/dashboard/connections';
 
 // Headers CORS
 const corsHeaders = {
@@ -21,6 +21,9 @@ serve(async (req) => {
 
   try {
     console.log("Traitement de l'authentification YouTube");
+    console.log("Client ID configuré:", !!YOUTUBE_CLIENT_ID);
+    console.log("Client Secret configuré:", !!YOUTUBE_CLIENT_SECRET);
+    console.log("URI de redirection:", REDIRECT_URI);
 
     // Récupérer le code d'autorisation et l'URI de redirection
     const { code, redirect_uri } = await req.json();

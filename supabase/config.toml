@@ -29,7 +29,8 @@ enabled = true
 
 [auth]
 enabled = true
-site_url = "http://localhost:3000"
+site_url = "https://id-preview--cc3685fd-9c23-4caa-b619-780c74b89cd1.lovable.app"
+additional_redirect_urls = ["https://id-preview--cc3685fd-9c23-4caa-b619-780c74b89cd1.lovable.app/dashboard/connections"]
 
 [analytics]
 enabled = false
@@ -38,4 +39,10 @@ enabled = false
 verify_jwt = true
 
 [functions.youtube-auth]
+verify_jwt = true
+
+[functions.tiktok-downloader]
+verify_jwt = true
+
+[functions.tiktok-webhook]
 verify_jwt = true

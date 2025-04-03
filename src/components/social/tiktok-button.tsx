@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Music, Plus, Trash2, Check, Loader2, AlertCircle } from 'lucide-react';
@@ -18,17 +17,26 @@ export function TikTokButton({ connection, onConnect, onDisconnect, isLoading }:
   const [localLoading, setLocalLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const [clientKeyAvailable, setClientKeyAvailable] = useState<boolean>(true); // Toujours true en mode sandbox
+  const [clientKeyAvailable, setClientKeyAvailable] = useState<boolean>(true);
   
   useEffect(() => {
     // Vérifier si les variables d'environnement TikTok sont disponibles
-    const checkTikTokConfig = () => {
-      // En mode sandbox, nous permettons l'utilisation même sans configuration complète
-      setClientKeyAvailable(true);
-      
-      // Indiquer clairement le mode sandbox
-      console.log("Mode TikTok Sandbox actif");
-      setError("Mode TikTok Sandbox actif - Utilisation de valeurs simulées");
+    const checkTikTokConfig = async () => {
+      try {
+        const tikTokClientId = import.meta.env.VITE_TIKTOK_CLIENT_ID;
+        
+        if (!tikTokClientId) {
+          console.warn("ID Client TikTok non configuré");
+          setClientKeyAvailable(false);
+          setError("Clé d'API TikTok non configurée. Contactez l'administrateur.");
+        } else {
+          setClientKeyAvailable(true);
+          console.log("Configuration TikTok Sandbox détectée");
+        }
+      } catch (error) {
+        console.error("Erreur lors de la vérification de la config TikTok:", error);
+        setClientKeyAvailable(false);
+      }
     };
     
     checkTikTokConfig();
@@ -39,8 +47,11 @@ export function TikTokButton({ connection, onConnect, onDisconnect, isLoading }:
       setLocalLoading(true);
       setError(null);
       
-      // En mode sandbox, nous continuons même sans clé configurée
-      console.log("Tentative de connexion à TikTok en mode Sandbox...");
+      if (!clientKeyAvailable) {
+        throw new Error("Configuration TikTok manquante. Impossible de se connecter.");
+      }
+      
+      console.log("Tentative de connexion à TikTok avec l'API Sandbox...");
       
       // Utiliser la fonction de connexion TikTok de social-auth.ts
       await onConnect();
@@ -121,6 +132,14 @@ export function TikTokButton({ connection, onConnect, onDisconnect, isLoading }:
         </div>
       )}
 
+      {!connection && !clientKeyAvailable && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-4">
+          <p className="text-sm text-yellow-700">
+            La connexion à TikTok n'est pas configurée correctement. Veuillez contacter l'administrateur.
+          </p>
+        </div>
+      )}
+
       {connection && (
         <div className="bg-secondary-50 rounded-lg p-3 flex items-center space-x-3">
           <div className="bg-green-100 p-1.5 rounded-full">
@@ -142,14 +161,6 @@ export function TikTokButton({ connection, onConnect, onDisconnect, isLoading }:
         <div className="bg-secondary-50 rounded-lg p-4 border border-dashed border-secondary-200 text-center">
           <p className="text-sm text-secondary-600">
             Connect your TikTok account to enable cross-posting and analytics tracking
-          </p>
-        </div>
-      )}
-
-      {!connection && error && error.includes('Sandbox') && (
-        <div className="bg-blue-50 rounded-lg p-4 border border-dashed border-blue-200 text-center mt-3">
-          <p className="text-sm text-blue-600">
-            Mode Sandbox actif - La connexion fonctionnera avec un compte développeur
           </p>
         </div>
       )}

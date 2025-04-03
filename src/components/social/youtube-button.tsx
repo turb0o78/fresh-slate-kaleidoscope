@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Button } from '../ui/button';
-import { Youtube, Plus, Trash2, Check, Loader2, AlertCircle } from 'lucide-react';
+import { Youtube, Plus, Trash2, Check, Loader2 } from 'lucide-react';
 import type { SocialConnection } from '../../lib/types';
 import { useToast } from '../ui/toast';
 
