@@ -9,6 +9,28 @@
     <title>Vite + React + TS</title>
   </head>
   <body>
+    <!-- Script d'initialisation du SDK Facebook -->
+    <script>
+      window.fbAsyncInit = function() {
+        FB.init({
+          appId      : '990797112672585', // Votre App ID Facebook
+          cookie     : true,
+          xfbml      : true,
+          version    : 'v19.0' // Version de l'API actuelle
+        });
+          
+        FB.AppEvents.logPageView();   
+      };
+    
+      (function(d, s, id){
+         var js, fjs = d.getElementsByTagName(s)[0];
+         if (d.getElementById(id)) {return;}
+         js = d.createElement(s); js.id = id;
+         js.src = "https://connect.facebook.net/en_US/sdk.js";
+         fjs.parentNode.insertBefore(js, fjs);
+       }(document, 'script', 'facebook-jssdk'));
+    </script>
+    
     <div id="root"></div>
     <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
     <script type="module" src="/src/main.tsx"></script>

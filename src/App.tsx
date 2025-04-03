@@ -11,6 +11,7 @@ import { Header } from './components/layout/header';
 import { Footer } from './components/layout/footer';
 import { useEffect } from 'react';
 import { ToastProvider } from './components/ui/toast';
+import FacebookSDKDemoPage from './pages/facebook-sdk-demo';
 
 function App() {
   // Add scroll to top on route change
@@ -57,6 +58,20 @@ function App() {
                   <Header />
                   <div className="pt-16"> 
                     <PrivacyPage />
+                  </div>
+                  <Footer />
+                </>
+              } 
+            />
+            
+            {/* Page de démonstration du SDK Facebook */}
+            <Route 
+              path="/facebook-sdk-demo" 
+              element={
+                <>
+                  <Header />
+                  <div className="pt-16"> 
+                    <FacebookSDKDemoPage />
                   </div>
                   <Footer />
                 </>
