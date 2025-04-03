@@ -1,9 +1,10 @@
 
 import { useState } from 'react';
 import { Button } from '../ui/button';
-import { Music, Plus, Trash2, Check, Loader2 } from 'lucide-react';
+import { Music, Plus, Trash2, Check, Loader2, AlertCircle } from 'lucide-react';
 import { initiateSocialAuth } from '../../lib/social-auth';
 import type { SocialConnection } from '../../lib/types';
+import { useToast } from '../../components/ui/toast';
 
 interface TikTokButtonProps {
   connection?: SocialConnection;
@@ -15,14 +16,38 @@ interface TikTokButtonProps {
 export function TikTokButton({ connection, onConnect, onDisconnect, isLoading }: TikTokButtonProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [localLoading, setLocalLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
   
   const handleConnect = async () => {
     try {
       setLocalLoading(true);
-      // Utilisons la fonction de connexion TikTok de social-auth.ts
+      setError(null);
+      
+      // Vérifier si les identifiants TikTok sont configurés
+      if (!import.meta.env.VITE_TIKTOK_CLIENT_ID) {
+        setError("Clé d'application TikTok (client_key) non configurée");
+        toast({
+          title: "Erreur de configuration",
+          description: "Clé d'application TikTok non configurée",
+          type: "error"
+        });
+        return;
+      }
+      
+      console.log("Tentative de connexion à TikTok...");
+      console.log("Client ID disponible:", !!import.meta.env.VITE_TIKTOK_CLIENT_ID);
+      
+      // Utiliser la fonction de connexion TikTok de social-auth.ts
       await initiateSocialAuth('tiktok');
     } catch (error) {
       console.error("Erreur lors de l'initialisation de l'authentification TikTok:", error);
+      setError(error instanceof Error ? error.message : "Erreur inconnue");
+      toast({
+        title: "Échec de connexion",
+        description: error instanceof Error ? error.message : "Erreur lors de la connexion à TikTok",
+        type: "error"
+      });
     } finally {
       // Le chargement sera réinitialisé lorsque l'utilisateur reviendra du flux d'autorisation
       setLocalLoading(false);
@@ -85,6 +110,13 @@ export function TikTokButton({ connection, onConnect, onDisconnect, isLoading }:
         )}
       </div>
 
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center space-x-3 mb-4">
+          <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
+          <p className="text-sm text-red-600">{error}</p>
+        </div>
+      )}
+
       {connection && (
         <div className="bg-secondary-50 rounded-lg p-3 flex items-center space-x-3">
           <div className="bg-green-100 p-1.5 rounded-full">
@@ -102,7 +134,7 @@ export function TikTokButton({ connection, onConnect, onDisconnect, isLoading }:
         </div>
       )}
 
-      {!connection && (
+      {!connection && !error && (
         <div className="bg-secondary-50 rounded-lg p-4 border border-dashed border-secondary-200 text-center">
           <p className="text-sm text-secondary-600">
             Connect your TikTok account to enable cross-posting and analytics tracking

@@ -4,6 +4,17 @@ import { createClient } from 'npm:@supabase/supabase-js@2.39.3';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const tiktokClientKey = Deno.env.get('TIKTOK_CLIENT_ID')!;
+const tiktokClientSecret = Deno.env.get('TIKTOK_CLIENT_SECRET')!;
+
+// Vérifier que les variables d'environnement essentielles sont définies
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error("Variables d'environnement Supabase manquantes");
+}
+
+if (!tiktokClientKey || !tiktokClientSecret) {
+  console.error("Variables d'environnement TikTok manquantes");
+}
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
@@ -33,9 +44,29 @@ serve(async (req) => {
       );
     }
 
+    // Enregistrer la réception du webhook pour débogage
+    console.log("Webhook TikTok reçu:", new Date().toISOString());
+
     // Récupérer les données de la requête
     const payload = await req.json();
-    console.log('Webhook TikTok reçu:', JSON.stringify(payload, null, 2));
+    console.log('Webhook TikTok détails:', JSON.stringify(payload, null, 2));
+
+    // Enregistrer le webhook dans la base de données pour débogage
+    try {
+      const { error: logError } = await supabase
+        .from('tiktok_webhooks')
+        .insert({
+          event_type: payload.event_type || 'unknown',
+          payload: payload,
+          signature: req.headers.get('X-TIKTOK-SIGNATURE') || null
+        });
+
+      if (logError) {
+        console.error("Erreur lors de l'enregistrement du webhook:", logError);
+      }
+    } catch (logErr) {
+      console.error("Exception lors de l'enregistrement du webhook:", logErr);
+    }
 
     // Vérifier si c'est un événement de nouvelle vidéo
     // Note: Il faut adapter cela selon le format exact des webhooks TikTok

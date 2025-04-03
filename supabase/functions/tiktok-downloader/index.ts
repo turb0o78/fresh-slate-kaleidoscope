@@ -4,6 +4,11 @@ import { createClient } from 'npm:@supabase/supabase-js@2.39.3';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const tiktokClientKey = Deno.env.get('TIKTOK_CLIENT_ID')!;
+const tiktokClientSecret = Deno.env.get('TIKTOK_CLIENT_SECRET')!;
+
+console.log("Function tiktok-downloader initialized");
+console.log("TikTok client key configured:", !!tiktokClientKey);
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
@@ -28,11 +33,14 @@ async function downloadTikTokVideo(videoId: string): Promise<ArrayBuffer> {
       ? videoId 
       : `https://www.tiktok.com/@username/video/${videoId}`;
     
-    // Utiliser une API tierce pour télécharger sans watermark
-    // Note: Ceci est un exemple, remplacer par une API réelle
-    const apiUrl = `https://api.example.com/tiktok/download?url=${encodeURIComponent(tiktokUrl)}&no_watermark=1`;
+    // Utiliser l'API TikTok ou un service tiers pour télécharger sans watermark
+    // Cette implémentation dépendra de l'API spécifique que vous utilisez
     
-    console.log(`Appel de l'API de téléchargement: ${apiUrl}`);
+    // Exemple simplifié - Dans une implémentation réelle, vous utiliseriez l'API TikTok
+    // ou un service tiers avec les identifiants appropriés
+    const apiUrl = `https://api.example.com/tiktok/download?url=${encodeURIComponent(tiktokUrl)}&client_key=${tiktokClientKey}`;
+    
+    console.log(`Appel de l'API de téléchargement`);
     const response = await fetch(apiUrl);
     
     if (!response.ok) {

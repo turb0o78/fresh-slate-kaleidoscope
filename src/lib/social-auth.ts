@@ -1,4 +1,3 @@
-
 import { supabase } from './supabase';
 import type { Platform } from './types';
 
@@ -19,7 +18,7 @@ const OAUTH_PROVIDERS: Record<Platform, OAuthProvider> = {
     clientKey: import.meta.env.VITE_TIKTOK_CLIENT_ID,
     clientSecret: import.meta.env.VITE_TIKTOK_CLIENT_SECRET,
     scope: 'user.info.basic,video.list,video.upload',
-    redirectUri: 'https://opaldesign.fr/dashboard/connections'
+    redirectUri: import.meta.env.VITE_TIKTOK_REDIRECT_URI || 'https://opaldesign.fr/dashboard/connections'
   },
   facebook: {
     url: 'https://www.facebook.com/v18.0/dialog/oauth',
@@ -68,29 +67,39 @@ export async function initiateSocialAuth(platform: Platform) {
   sessionStorage.setItem('oauth_state', state);
   sessionStorage.setItem('oauth_platform', platform);
 
-  const params = new URLSearchParams();
-  
+  console.log(`Initialisation de l'authentification ${platform}`);
+  console.log('OAuth provider:', provider);
+
   if (platform === 'tiktok') {
-    // Check if provider has clientKey property
     if ('clientKey' in provider) {
+      const params = new URLSearchParams();
       params.append('client_key', provider.clientKey);
       params.append('response_type', 'code');
       params.append('scope', provider.scope);
       params.append('redirect_uri', provider.redirectUri);
       params.append('state', state);
+      
+      const fullUrl = `${provider.url}?${params.toString()}`;
+      console.log('URL de redirection TikTok:', fullUrl);
+      
+      window.location.href = fullUrl;
+      return;
     }
   } else {
-    // Check if provider has clientId property
     if ('clientId' in provider) {
+      const params = new URLSearchParams();
       params.append('client_id', provider.clientId);
       params.append('response_type', 'code');
       params.append('scope', provider.scope);
       params.append('redirect_uri', provider.redirectUri || `${window.location.origin}/dashboard/connections`);
       params.append('state', state);
+      
+      window.location.href = `${provider.url}?${params.toString()}`;
+      return;
     }
   }
 
-  window.location.href = `${provider.url}?${params.toString()}`;
+  throw new Error(`Configuration incorrecte pour ${platform}`);
 }
 
 export async function handleOAuthCallback(code: string, state: string) {
@@ -115,12 +124,10 @@ export async function handleOAuthCallback(code: string, state: string) {
     if (platform === 'tiktok') {
       const provider = OAUTH_PROVIDERS.tiktok;
 
-      // Make sure we use type guard to access clientKey
       if (!('clientKey' in provider)) {
         throw new Error('Invalid TikTok provider configuration');
       }
 
-      // Exchange code for access token using TikTok v2 API
       console.log('Exchanging code for access token...');
       const tokenResponse = await fetch('https://open.tiktokapis.com/v2/oauth/token/', {
         method: 'POST',
@@ -149,7 +156,6 @@ export async function handleOAuthCallback(code: string, state: string) {
         throw new Error('No access token received from TikTok');
       }
 
-      // Get user info using TikTok v2 API - Correcting the request format
       console.log('Fetching user info...');
       const userResponse = await fetch('https://open.tiktokapis.com/v2/user/info/', {
         method: 'POST',
@@ -174,7 +180,6 @@ export async function handleOAuthCallback(code: string, state: string) {
         throw new Error('Invalid user data response from TikTok API');
       }
 
-      // Save connection
       const { error: saveError } = await supabase
         .from('social_connections')
         .upsert({
@@ -200,7 +205,6 @@ export async function handleOAuthCallback(code: string, state: string) {
       return { platform: 'tiktok' };
     }
 
-    // Handle other platforms...
     return { platform };
   } catch (error) {
     console.error('Error during OAuth callback:', error);
