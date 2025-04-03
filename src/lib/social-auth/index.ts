@@ -4,7 +4,6 @@ import type { Platform } from '../types';
 import { OAUTH_PROVIDERS, YOUTUBE_REDIRECT_URI } from './config';
 import { handleYouTubeCallback } from './youtube';
 import { handleTikTokCallback } from './tiktok';
-import type { OAuthProvider } from './types';
 
 export async function initiateSocialAuth(platform: Platform) {
   try {
@@ -129,8 +128,6 @@ export async function handleOAuthCallback(code: string, state: string) {
   }
 }
 
-// Export des types
-export type { OAuthProvider } from './types';
 // Export des modules individuels
 export * from './youtube';
 export * from './tiktok';
