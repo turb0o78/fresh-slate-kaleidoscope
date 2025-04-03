@@ -43,7 +43,7 @@ enable_confirmations = false
 enabled = true
 
 [functions]
-enabled = true
+# Il ne faut pas définir 'enabled = true' ici directement
 
 [functions.meta-auth]
 verify_jwt = true
