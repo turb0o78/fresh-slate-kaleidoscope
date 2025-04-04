@@ -4,14 +4,12 @@ project_id = "ngkbxqkdgqisjkbzpdyu"
 [api]
 enabled = true
 port = 54321
-schemas = ["public", "storage"]
-extra_search_path = ["public", "extensions"]
-max_rows = 1000
+schemas = ["public", "storage", "graphql_public"]
 
 [db]
 port = 54322
-shadow_port = 54320
 major_version = 15
+shadow_port = 54320
 
 [studio]
 enabled = true
@@ -21,31 +19,16 @@ api_url = "http://localhost"
 [inbucket]
 enabled = true
 port = 54324
-smtp_port = 54325
-pop3_port = 54326
 
 [storage]
 enabled = true
 
 [auth]
 enabled = true
-site_url = "https://id-preview--cc3685fd-9c23-4caa-b619-780c74b89cd1.lovable.app"
-additional_redirect_urls = [
-  "https://id-preview--cc3685fd-9c23-4caa-b619-780c74b89cd1.lovable.app/dashboard/connections",
-  "http://localhost:5173/dashboard/connections"
-]
+site_url = "http://localhost:3000"
 
-[analytics]
-enabled = false
+[realtime]
+enabled = true
 
-[functions.youtube-publish]
-verify_jwt = true
-
-[functions.youtube-auth]
-verify_jwt = true
-
-[functions.tiktok-downloader]
-verify_jwt = true
-
-[functions.tiktok-webhook]
+[functions.tiktok-auth]
 verify_jwt = true

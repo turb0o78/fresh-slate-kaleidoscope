@@ -14,11 +14,11 @@ export const YOUTUBE_REDIRECT_URI = `${DOMAIN_URL}/dashboard/connections`;
 /* eslint-enable @typescript-eslint/no-unused-vars */
 
 // TikTok configuration
-export const TIKTOK_CLIENT_KEY = 'sbawa90yd34c5s6msg';
+export const TIKTOK_CLIENT_KEY = 'sbawf6irmmchhfb024';
 export const TIKTOK_REDIRECT_URI = `${DOMAIN_URL}/dashboard/connections`;
 /* eslint-disable @typescript-eslint/no-unused-vars */
 // Secrets conservés en commentaire pour référence uniquement, ne sont pas utilisés dans le code frontend
-// const TIKTOK_CLIENT_SECRET = 'a76161b9f85de465ae8a824458d9c4f8569c24a0';
+// const TIKTOK_CLIENT_SECRET = '527PTV44XSHpgyBQgAV9iB3dPeHBmzSq';
 /* eslint-enable @typescript-eslint/no-unused-vars */
 
 // Configuration des fournisseurs OAuth

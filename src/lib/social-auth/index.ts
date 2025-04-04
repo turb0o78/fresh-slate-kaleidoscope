@@ -1,4 +1,3 @@
-
 import { supabase } from '../supabase';
 import type { Platform } from '../types';
 import { OAUTH_PROVIDERS, YOUTUBE_REDIRECT_URI } from './config';
@@ -63,7 +62,9 @@ export async function initiateSocialAuth(platform: Platform) {
       const fullUrl = `${provider.url}?${params.toString()}`;
       console.log('URL de redirection TikTok complète:', fullUrl);
       
-      window.location.href = fullUrl;
+      setTimeout(() => {
+        window.location.href = fullUrl;
+      }, 100);
       return;
     }
     
@@ -101,6 +102,8 @@ export async function handleOAuthCallback(code: string, state: string) {
     throw new Error("Non-correspondance de l'état OAuth");
   }
 
+  console.log(`Traitement du callback OAuth pour ${platform} avec code: ${code.substring(0, 5)}...`);
+  
   sessionStorage.removeItem('oauth_state');
   sessionStorage.removeItem('oauth_platform');
 
@@ -115,7 +118,7 @@ export async function handleOAuthCallback(code: string, state: string) {
     
     // Gérer l'authentification TikTok
     else if (platform === 'tiktok') {
-      return await handleTikTokCallback(user);
+      return await handleTikTokCallback(user, code);
     }
     
     // Gérer les autres plateformes
