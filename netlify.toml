@@ -1,14 +1,15 @@
+
 [build]
   command = "npm run build"
   publish = "dist"
   functions = "netlify/functions"
 
-# Handle SPA routing
+# Handle SPA routing - This redirects ALL routes to index.html
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-  force = false
+  force = true
 
 # TikTok verification file
 [[redirects]]
